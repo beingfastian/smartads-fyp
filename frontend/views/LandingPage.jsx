@@ -106,11 +106,11 @@ const LandingPage = ({ onNavigate }) => {
 
       {/* FEATURES */}
       <section style={{ padding: "80px 20px", maxWidth: 1300, margin: "0 auto", background: colors.bg1 }}>
-        <h2 style={{ textAlign: "center", fontSize: "2.8rem", color: "#F0F4FF", marginBottom: 10, fontWeight: "bold" }}>
+        <h2 style={{ textAlign: "center", fontSize: "2.8rem", color: colors.text1, marginBottom: 10, fontWeight: "bold" }}>
           Powerful Features
         </h2>
 
-        <p style={{ textAlign: "center", color: "#C7D2FE", fontSize: "1.1rem", marginBottom: 50 }}>
+        <p style={{ textAlign: "center", color: colors.text2, fontSize: "1.1rem", marginBottom: 50 }}>
           Everything you need to grow your business
         </p>
 
@@ -222,13 +222,13 @@ const LandingPage = ({ onNavigate }) => {
       </section>
 
       {/* FOOTER */}
-      {/* FOOTER */}
       <footer
         style={{
           padding: "60px 40px 30px",
           borderTop: `1px solid ${colors.border}`,
-          background: mode === "dark" ? "#00003A" : "#1a1a2e",
-          color: "#C7D2FE",
+          background: mode === "dark" ? "rgba(0, 0, 40, 0.95)" : "#F1F5F9",
+          color: colors.text2,
+          transition: "all 0.3s ease",
         }}
       >
         <div
@@ -244,15 +244,25 @@ const LandingPage = ({ onNavigate }) => {
           {/* About Section */}
           <div style={{ textAlign: "left" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 15 }}>
-              <img
-                src="https://i.postimg.cc/hGxgNpDn/smartads-logo.png"
-                alt="SmartAds"
-                style={{ width: 35, height: 35 }}
-              />
+              <div
+                style={{
+                  width: 35,
+                  height: 35,
+                  borderRadius: 10,
+                  background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: `0 4px 12px ${colors.primary}40`,
+                }}
+              >
+                <Rocket size={18} color="white" />
+              </div>
               <h3
                 style={{
                   fontSize: "1.3rem",
                   fontWeight: "bold",
+                  margin: 0,
                   background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
@@ -261,7 +271,7 @@ const LandingPage = ({ onNavigate }) => {
                 SmartAds
               </h3>
             </div>
-            <p style={{ fontSize: "0.95rem", lineHeight: 1.6, opacity: 0.8 }}>
+            <p style={{ fontSize: "0.95rem", lineHeight: 1.6, opacity: 0.8, color: colors.text2 }}>
               AI-Powered Marketing Platform helping businesses create professional content in minutes.
             </p>
           </div>
@@ -269,7 +279,7 @@ const LandingPage = ({ onNavigate }) => {
           
           {/* Contact Info */}
           <div style={{ textAlign: "left" }}>
-            <h4 style={{ fontSize: "1.1rem", marginBottom: 15, fontWeight: "bold", color: "#F0F4FF" }}>
+            <h4 style={{ fontSize: "1.1rem", marginBottom: 15, fontWeight: "bold", color: colors.text1 }}>
               Contact Us
             </h4>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -297,7 +307,7 @@ const LandingPage = ({ onNavigate }) => {
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                   </svg>
                 </div>
-                <span style={{ fontSize: "0.95rem" }}>03031233445</span>
+                <span style={{ fontSize: "0.95rem", color: colors.text2 }}>03031233445</span>
               </div>
 
               {/* Email */}
@@ -325,7 +335,7 @@ const LandingPage = ({ onNavigate }) => {
                     <polyline points="22,6 12,13 2,6" />
                   </svg>
                 </div>
-                <span style={{ fontSize: "0.95rem", wordBreak: "break-all" }}>nakhalsheikh4@gmail.com</span>
+                <span style={{ fontSize: "0.95rem", wordBreak: "break-all", color: colors.text2 }}>nakhalsheikh4@gmail.com</span>
               </div>
 
               {/* Location */}
@@ -353,7 +363,7 @@ const LandingPage = ({ onNavigate }) => {
                     <circle cx="12" cy="10" r="3" />
                   </svg>
                 </div>
-                <span style={{ fontSize: "0.95rem" }}>NUCES Chiniot, Pakistan</span>
+                <span style={{ fontSize: "0.95rem", color: colors.text2 }}>NUCES Chiniot, Pakistan</span>
               </div>
             </div>
           </div>
@@ -363,11 +373,11 @@ const LandingPage = ({ onNavigate }) => {
         <div
           style={{
             paddingTop: 30,
-            borderTop: "1px solid rgba(199, 210, 254, 0.2)",
+            borderTop: `1px solid ${colors.border}`,
             textAlign: "center",
           }}
         >
-          <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.7 }}>
+          <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.7, color: colors.text2 }}>
             © 2025 SmartAds. All rights reserved.
           </p>
         </div>

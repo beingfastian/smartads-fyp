@@ -17,6 +17,7 @@ const LogoDesigner = ({ onNavigate }) => {
   const [generateCaptions, setGenerateCaptions] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [generatedResult, setGeneratedResult] = useState(null);
 
   // Toggle type selection (Logo and/or Poster)
   const toggleType = (type) => {
@@ -139,18 +140,13 @@ const LogoDesigner = ({ onNavigate }) => {
         ? ` (${uploadedImages.length} reference image${uploadedImages.length !== 1 ? 's' : ''})` 
         : "";
 
+      setGeneratedResult(results);
       setMessage(`✓ ${typeText}${captionText}${imageCount} generated successfully!`);
       
-      // Reset form after success
       setTimeout(() => {
-        setProductName("");
-        setDescription("");
-        setPrice("");
-        setSelectedTypes([]);
-        setUploadedImages([]);
-        setGenerateCaptions(false);
-        setMessage("");
-      }, 3000);
+        const el = document.getElementById("results-section");
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
 
     } catch (error) {
       setMessage("Error generating design. Please try again.");
@@ -706,21 +702,78 @@ const LogoDesigner = ({ onNavigate }) => {
           >
             {loading ? "Generating..." : "Generate Design"}
           </button>
+          
+          {/* Results Section */}
+          {generatedResult && generatedResult.length > 0 && (
+            <div id="results-section" style={{ marginTop: "30px", padding: "20px", background: colors.bg2, borderRadius: "12px", border: `1px solid ${colors.border}` }}>
+              <h3 style={{ marginBottom: "15px", color: colors.text1, textAlign: "center" }}>Generated Designs</h3>
+              {generatedResult.map((item, idx) => (
+                <div key={idx} style={{ marginBottom: "20px", padding: "15px", background: colors.cardBg, borderRadius: "10px", border: `1px solid ${colors.border}` }}>
+                  <p style={{ color: colors.text1 }}><b>Type:</b> {item.type}</p>
+                  <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ color: colors.primary, fontWeight: "600" }}>
+                    View full size on Cloudinary →
+                  </a>
+                  <br />
+                  <img src={item.url} alt={item.type} style={{ marginTop: "15px", maxWidth: "100%", borderRadius: "8px", border: `1px solid ${colors.border}` }} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
       {/* FOOTER */}
       <footer
         style={{
-          padding: 40,
-          background: colors.bg2,
-          textAlign: "center",
-          color: colors.text2,
-          marginTop: 50,
+          padding: "60px 40px 30px",
           borderTop: `1px solid ${colors.border}`,
+          background: colors.bg2,
+          color: colors.text2,
+          textAlign: "center",
+          marginTop: 50,
+          transition: "all 0.3s ease",
         }}
       >
-        © 2025 SmartAds. All rights reserved. | Powered by AI
+        <div style={{ maxWidth: 1200, margin: "0 auto", marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 12 }}>
+            <div
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: 8,
+                background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: `0 4px 12px ${colors.primary}40`,
+              }}
+            >
+              <Rocket size={15} color="white" />
+            </div>
+            <h3
+              style={{
+                fontSize: "1.1rem",
+                fontWeight: "bold",
+                margin: 0,
+                background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              SmartAds
+            </h3>
+          </div>
+        </div>
+        <div
+          style={{
+            paddingTop: 20,
+            borderTop: `1px solid ${colors.border}`,
+          }}
+        >
+          <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.7, color: colors.text2 }}>
+            © 2025 SmartAds. All rights reserved. | Powered by AI
+          </p>
+        </div>
       </footer>
     </div>
   );

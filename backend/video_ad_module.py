@@ -1,6 +1,6 @@
 import os
+import time
 import tempfile
-import requests
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 from flask_cors import CORS
@@ -9,8 +9,9 @@ from pymongo import MongoClient
 import cloudinary
 import cloudinary.uploader
 
-# moviepy import: use specific submodule path to avoid editor import issues
-from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
+# Google GenAI SDK
+from google import genai
+from google.genai import types
 
 video_ad_module = Blueprint('video_ad_module', __name__)
 CORS(video_ad_module, origins=["*"])
@@ -25,7 +26,10 @@ CLOUDINARY_API_SECRET = os.getenv("CLOUD_API_SECRET")
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
 
 if not GEMINI_API_KEY:
-    print("[ERROR] GEMINI_API_KEY is missing from environment. Image generation will fail.")
+    print("[ERROR] GEMINI_API_KEY is missing from environment. Video generation will fail.")
+
+# Initialize GenAI client
+genai_client = genai.Client(api_key=GEMINI_API_KEY)
 
 cloudinary.config(
     cloud_name=CLOUDINARY_CLOUD_NAME,
@@ -37,170 +41,163 @@ client = MongoClient(MONGO_URI)
 db = client.get_database(os.getenv("DATABASE_NAME", "SmartAds"))
 videos_collection = db.get_collection("videos")
 
+
 # ==========================================================
-# NEW ROUTE: ENHANCE PROMPT & SAFETY FILTER
+# ROUTE 1: ENHANCE PROMPT & SAFETY FILTER (Gemini Text)
 # ==========================================================
 @video_ad_module.route("/enhance-prompt", methods=["POST"])
 def enhance_prompt():
     data = request.get_json() or {}
-    
-    # Safety and Professional Enhancement Instruction
+
     system_instruction = (
         "Role: Expert Ad Creative Director and Content Safety Moderator. "
         "Task 1: Scan the input for any vulgar, inappropriate, or low-quality language. "
         "Task 2: If found, replace them with high-end, professional marketing terminology. "
         "Task 3: Convert the raw product details (even if in Roman Urdu/Hindi) into ONE "
-        "sophisticated English image generation prompt focused on 8k resolution and cinematic lighting. "
+        "sophisticated English video generation prompt focused on cinematic quality. "
+        "The prompt should describe a short, visually stunning video advertisement scene "
+        "with camera movements, lighting, and product showcase. "
         "Style: Professional One-Shot Prompting.\n\n"
         "Example Input: Product: sasti gandi coffee, Features: garam.\n"
-        "Enhanced Prompt: A premium steaming hot artisan coffee in a dark ceramic cup, "
-        "placed on a rustic wooden table with soft cinematic morning sunlight, 8k resolution, highly detailed.\n\n"
+        "Enhanced Prompt: A cinematic product reveal of premium artisan hot coffee in a dark "
+        "ceramic cup. Camera slowly dollies in as steam rises elegantly. Soft golden morning "
+        "sunlight filters through a window, casting warm highlights. Smooth bokeh background "
+        "with rustic wooden textures. Professional commercial quality, 4K resolution.\n\n"
         "Now, enhance these details: "
     )
 
     raw_details = (
         f"Product Name: {data.get('productName')}, Description: {data.get('productDescription')}, "
-        f"Category: {data.get('productCategory')}, Features: {data.get('keyFeatures')}."
+        f"Category: {data.get('productCategory')}, Features: {data.get('keyFeatures')}, "
+        f"Brand: {data.get('brandName', '')}, Target Audience: {data.get('targetAudience', '')}, "
+        f"CTA: {data.get('callToAction', '')}."
     )
 
-    final_payload = {
-        "contents": [{
-            "parts": [{
-                "text": f"{system_instruction}\nInput: {raw_details}\n\nResulting Professional Prompt:"
-            }]
-        }]
-    }
-
-    chosen_model = CUSTOM_GEMINI_MODEL or "gemini-1.5-flash"
-    gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/{chosen_model}:generateContent?key={GEMINI_API_KEY}"
-
     try:
-        resp = requests.post(gemini_url, json=final_payload, timeout=30)
-        res_json = resp.json()
-        enhanced_text = res_json['candidates'][0]['content']['parts'][0]['text'].strip()
+        response = genai_client.models.generate_content(
+            model=CUSTOM_GEMINI_MODEL or "gemini-2.5-flash",
+            contents=f"{system_instruction}\nInput: {raw_details}\n\nResulting Professional Video Prompt:",
+        )
+        enhanced_text = response.text.strip()
         return jsonify({"enhancedPrompt": enhanced_text}), 200
     except Exception as e:
+        print(f"[ERROR] Enhancement failed: {e}")
         return jsonify({"error": f"Enhancement failed: {str(e)}"}), 500
 
 
-@video_ad_module.route("/generate-images", methods=["POST"])
-def generate_images():
-    data = request.get_json() or {}
-    # Use the enhanced prompt passed from frontend
-    professional_prompt = data.get("enhancedPrompt")
-
-    if not GEMINI_API_KEY:
-        return jsonify({"error": "GEMINI_API_KEY is missing."}), 500
-    
-    if not professional_prompt:
-        return jsonify({"error": "No professional prompt provided."}), 400
-
-    # --- NEGATIVE CONSTRAINTS LOGIC ---
-    negative_constraints = (
-        "Negative Constraints: Ensure NO blurry textures, NO distorted text, NO messy backgrounds, "
-        "NO watermarks, NO low resolution, NO anatomical glitches, NO overlapping elements, NO vulgarity."
-    )
-
-    payload = {
-        "contents": [{
-            "parts": [{
-                "text": f"Generate 5 high-quality commercial image variations for this prompt: {professional_prompt}. {negative_constraints}"
-            }]
-        }]
-    }
-
-    chosen_model = CUSTOM_GEMINI_MODEL or "gemini-1.5-flash"
-    gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/{chosen_model}:generateContent?key={GEMINI_API_KEY}"
-
-    try:
-        resp = requests.post(gemini_url, json=payload, timeout=45)
-        if resp.status_code != 200:
-            return jsonify({"error": "Gemini API error", "details": resp.text}), 500
-        
-        gemini_data = resp.json()
-        images = []
-
-        contents = gemini_data.get("contents") or gemini_data.get("output") or []
-        for block in contents:
-            parts = block.get("parts") or []
-            for part in parts:
-                inline = part.get("inlineData") or {}
-                if inline and "data" in inline:
-                    b64 = inline.get("data")
-                    upload_result = cloudinary.uploader.upload(f"data:image/png;base64,{b64}", folder="video_ads")
-                    images.append(upload_result.get("secure_url"))
-                if part.get("type") == "image" and part.get("url"):
-                    images.append(part.get("url"))
-
-        if not images:
-            return jsonify({"error": "No images generated", "gemini_response": gemini_data}), 500
-
-        # Save metadata to DB
-        video_doc = {
-            "prompt": professional_prompt,
-            "images": images,
-            "created_at": datetime.utcnow().isoformat(),
-        }
-        videos_collection.insert_one(video_doc)
-
-        return jsonify({"images": images}), 200
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
+# ==========================================================
+# ROUTE 2: GENERATE VIDEO via Veo 3.1
+# Uses veo-3.1-fast-generate-preview model
+# This is an async operation — we poll until done
+# ==========================================================
 @video_ad_module.route("/generate-video", methods=["POST"])
 def generate_video():
     data = request.get_json() or {}
-    image_urls = data.get("image_urls", [])
-    product_id = data.get("product_id")
+    prompt = data.get("prompt", "")
 
-    if not image_urls:
-        return jsonify({"error": "No image_urls provided"}), 400
+    if not prompt:
+        return jsonify({"error": "No prompt provided for video generation."}), 400
 
-    image_files = []
+    if not GEMINI_API_KEY:
+        return jsonify({"error": "GEMINI_API_KEY is missing."}), 500
+
+    print(f"[VEO 3.1] Starting video generation with prompt: {prompt[:100]}...")
+
     try:
-        for url in image_urls:
-            resp = requests.get(url, timeout=15)
-            if resp.status_code == 200:
-                tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
-                tmp.write(resp.content)
-                tmp.close()
-                image_files.append(tmp.name)
-            else:
-                return jsonify({"error": f"Failed to download image: {url}"}), 400
+        # --- Step 1: Initiate async video generation ---
+        operation = genai_client.models.generate_videos(
+            model="veo-3.1-lite-generate-preview",
+            prompt=prompt,
+            config=types.GenerateVideosConfig(
+                number_of_videos=1,
+                aspect_ratio="16:9",
+                resolution="1080p",
+            ),
+        )
 
-        clip = ImageSequenceClip(image_files, fps=1)
+        print(f"[VEO 3.1] Operation started: {operation.name}")
+
+        # --- Step 2: Poll until video is ready ---
+        max_wait_seconds = 300  # 5 minute max
+        poll_interval = 10  # seconds
+        elapsed = 0
+
+        while not operation.done:
+            if elapsed >= max_wait_seconds:
+                return jsonify({"error": "Video generation timed out after 5 minutes. Please try again."}), 504
+
+            print(f"[VEO 3.1] Waiting... ({elapsed}s elapsed)")
+            time.sleep(poll_interval)
+            elapsed += poll_interval
+
+            # Refresh operation status
+            operation = genai_client.operations.get(operation)
+
+        print(f"[VEO 3.1] Generation complete after {elapsed}s")
+
+        # --- Step 3: Check for errors ---
+        if operation.error:
+            print(f"[VEO 3.1] Error: {operation.error}")
+            return jsonify({"error": f"Video generation failed: {operation.error}"}), 500
+
+        # --- Step 4: Extract video ---
+        result = operation.result
+        if not result or not hasattr(result, 'generated_videos') or not result.generated_videos:
+            print(f"[VEO 3.1] No generated_videos found. Result: {result}")
+            return jsonify({"error": "No video was generated. The model returned empty results."}), 500
+
+        generated_video = result.generated_videos[0]
+        print(f"[VEO 3.1] Generated video: {repr(generated_video)[:300]}")
+
+        # --- Step 5: Download video bytes using the SDK files.download() API ---
+        # Veo returns remote videos (uri only, no embedded bytes).
+        # The official way to get bytes is via client.files.download()
+        video_bytes_data = genai_client.files.download(file=generated_video)
+        print(f"[VEO 3.1] Downloaded {len(video_bytes_data)} bytes via files.download()")
+
+        if not video_bytes_data or len(video_bytes_data) == 0:
+            return jsonify({"error": "Downloaded video is empty."}), 500
+
+        # --- Step 6: Write to temp file and upload to Cloudinary ---
         video_tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
-        video_tmp.close()
-        video_path = video_tmp.name
-        clip.write_videofile(video_path, codec='libx264', audio=False, verbose=False, logger=None)
+        video_tmp_path = video_tmp.name
 
-        upload_result = cloudinary.uploader.upload(video_path, resource_type="video", folder="video_ads")
-        video_url = upload_result.get("secure_url")
+        try:
+            video_tmp.write(video_bytes_data)
+            video_tmp.close()
 
-        video_doc = {
-            "images": image_urls,
-            "video_url": video_url,
-            "created_at": datetime.utcnow().isoformat(),
-        }
-        if product_id:
-            video_doc["product_id"] = product_id
-        videos_collection.insert_one(video_doc)
+            # Upload to Cloudinary
+            print(f"[VEO 3.1] Uploading video to Cloudinary...")
+            upload_result = cloudinary.uploader.upload(
+                video_tmp_path,
+                resource_type="video",
+                folder="video_ads",
+                format="mp4",
+            )
+            video_url = upload_result.get("secure_url")
+            print(f"[VEO 3.1] Upload complete: {video_url}")
 
-        return jsonify({"video_url": video_url}), 200
+            # Save metadata to MongoDB
+            video_doc = {
+                "prompt": prompt,
+                "video_url": video_url,
+                "model": "veo-3.1-lite-generate-preview",
+                "created_at": datetime.utcnow().isoformat(),
+            }
+            videos_collection.insert_one(video_doc)
+
+            return jsonify({"video_url": video_url}), 200
+
+        finally:
+            # Cleanup temp file
+            try:
+                if os.path.exists(video_tmp_path):
+                    os.remove(video_tmp_path)
+            except Exception:
+                pass
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-    finally:
-        for f in image_files:
-            try:
-                os.remove(f)
-            except:
-                pass
-        try:
-            if 'video_path' in locals() and os.path.exists(video_path):
-                os.remove(video_path)
-        except:
-            pass
+        print(f"[VEO 3.1] Exception: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Video generation failed: {str(e)}"}), 500

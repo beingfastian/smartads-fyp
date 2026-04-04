@@ -59,8 +59,8 @@ def create_app():
     app.register_blueprint(design_controller, url_prefix="/api")
     app.register_blueprint(product_controller, url_prefix="/api")
     app.register_blueprint(template_controller, url_prefix="/api")
-    #from video_ad_module import video_ad_module
-    #app.register_blueprint(video_ad_module, url_prefix="/api")
+    from video_ad_module import video_ad_module
+    app.register_blueprint(video_ad_module, url_prefix="/api")
     
     return app
 

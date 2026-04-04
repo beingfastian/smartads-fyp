@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { videoAdAPI } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
+import { hasVulgarity } from '../../utils/profanityFilter';
+import { Video, Loader2, Download, Maximize2, X } from "lucide-react";
 
 const initialProduct = {
   productName: '',
@@ -16,12 +18,12 @@ const initialProduct = {
 const VideoAdModule = () => {
   const { colors, mode } = useTheme();
   const [product, setProduct] = useState(initialProduct);
-  const [enhancedPrompt, setEnhancedPrompt] = useState(''); // Stores professional AI text
-  const [images, setImages] = useState([]);
+  const [enhancedPrompt, setEnhancedPrompt] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
-  const [step, setStep] = useState('form'); // form | preview | video
   const [loading, setLoading] = useState(false);
-  const [statusMessage, setStatusMessage] = useState('');
+  const [progressPhase, setProgressPhase] = useState('');
+  const [showFullscreen, setShowFullscreen] = useState(false);
+  const videoRef = useRef(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,222 +32,413 @@ const VideoAdModule = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (hasVulgarity(product.productName) || hasVulgarity(product.productDescription) || hasVulgarity(product.keyFeatures)) {
+        alert("Inappropriate language detected. Please remove offensive or vulgar words before generating.");
+        return;
+    }
+
     setLoading(true);
     setEnhancedPrompt('');
-    
-    // UI Experience messages
-    setStatusMessage('Step 1/2: Enhancing your prompt & cleaning language...');
+    setVideoUrl('');
     
     try {
-        // --- CALL ENHANCEMENT API FIRST ---
+        setProgressPhase('enhancing');
         const enhanceRes = await videoAdAPI.enhancePrompt(product);
-        setEnhancedPrompt(enhanceRes.enhancedPrompt);
+        const prompt = enhanceRes.enhancedPrompt;
+        setEnhancedPrompt(prompt);
+
+        setProgressPhase('generating');
+        const res = await videoAdAPI.generateVideo({ prompt });
         
-        // --- CALL GENERATION API SECOND ---
-        setStatusMessage('Step 2/2: Applying Quality Filters & Generating Images...');
-        const res = await videoAdAPI.generateImages({ enhancedPrompt: enhanceRes.enhancedPrompt });
-        
-        setImages(res.images || []);
-        setStep('preview');
+        if (res.video_url) {
+            setVideoUrl(res.video_url);
+        } else {
+            throw new Error('No video URL returned from the API.');
+        }
     } catch (err) {
-        alert('Process Failed: ' + err.message);
+        console.error('Video generation error:', err);
+        alert('Video Generation Failed: ' + (err.message || 'Unknown error'));
     } finally {
         setLoading(false);
-        setStatusMessage('');
+        setProgressPhase('');
     }
   };
 
-  const handleGenerateVideo = async () => {
-    setLoading(true);
-    setStatusMessage('Generating professional video from assets...');
-    try {
-        const res = await videoAdAPI.generateVideo({ image_urls: images });
-        setVideoUrl(res.video_url);
-        setStep('video');
-    } catch (err) {
-        alert('Video Generation Failed: ' + err.message);
-    } finally {
-        setLoading(false);
-        setStatusMessage('');
-    }
+  const handleReset = () => {
+    setVideoUrl('');
+    setEnhancedPrompt('');
+    setProduct(initialProduct);
   };
 
-  const handleEdit = () => {
-    setStep('form');
+  const handleDownload = () => {
+    if (!videoUrl) return;
+    const a = document.createElement('a');
+    a.href = videoUrl;
+    a.download = `smartads-video-${Date.now()}.mp4`;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
-  const handleRegenerate = async () => {
-    setLoading(true);
-    setStatusMessage('Regenerating new high-quality variations...');
-    try {
-        const res = await videoAdAPI.generateImages({ enhancedPrompt: enhancedPrompt });
-        setImages(res.images || []);
-    } catch (err) {
-        alert('Regeneration failed: ' + err.message);
-    } finally {
-        setLoading(false);
-        setStatusMessage('');
+  const animationStyles = `
+    @keyframes veoSpin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
-  };
+    @keyframes veoPulse {
+      0%, 100% { opacity: 0.35; }
+      50% { opacity: 0.7; }
+    }
+    @keyframes veoFadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  `;
 
   return (
     <div
       style={{
-        background: colors.cardBg,
-        borderRadius: 18,
-        boxShadow: mode === 'dark' ? '0 8px 32px #00005355' : '0 8px 32px #0088CC22',
-        padding: '32px 24px',
-        maxWidth: 1100,
-        margin: '0 auto',
+        width: '100%',
         color: colors.text1,
         fontFamily: 'Poppins, Arial, sans-serif',
         animation: 'fadeIn 0.5s',
-        overflowY: 'auto',
-        maxHeight: '80vh',
-        scrollbarWidth: 'thin',
-        scrollbarColor: `${colors.primary} ${colors.bg2}`,
       }}
       className="custom-scrollbar"
     >
-      {/* STATUS LOADING OVERLAY */}
-      {loading && (
-        <div style={{ 
-            background: colors.bg2, padding: '15px', borderRadius: '8px', 
-            marginBottom: '15px', borderLeft: `4px solid ${colors.accent}`,
-            position: 'sticky', top: 0, zIndex: 10, boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-        }}>
-            <div style={{ color: colors.accent, fontWeight: 700 }}>
-                <span className="spinner">⏳</span> {statusMessage}
-            </div>
-            {enhancedPrompt && (
-                <div style={{ marginTop: 8, fontSize: '0.85rem', color: colors.text2, background: 'rgba(0,0,0,0.03)', padding: '8px', borderRadius: 6 }}>
-                    <strong>AI Creative Director:</strong> "{enhancedPrompt}"
-                </div>
-            )}
-        </div>
-      )}
+      <style>{animationStyles}</style>
 
       <h2 style={{ fontWeight: 700, fontSize: '2rem', marginBottom: 24, color: colors.primary }}>Video Advertisement Module</h2>
       
-      {step === 'form' && (
-        <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
-          {/* Left: Product Details Form */}
+      {/* Horizontal Layout Split */}
+      <div style={{ display: 'flex', gap: 32, flexDirection: window.innerWidth < 768 ? 'column' : 'row' }}>
+        
+        {/* Left: Product Details Form */}
+        <div style={{ flex: 1 }}>
           <form
+            id="video-ad-form"
             onSubmit={handleSubmit}
             style={{
-              flex: 1, minWidth: 420, maxWidth: 520, borderRadius: 14,
-              padding: '32px 28px', background: mode === 'dark' ? 'rgba(0,0,83,0.18)' : '#F8FAFC',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 22,
+              borderRadius: 14,
+              padding: '24px', background: mode === 'dark' ? 'rgba(0,0,83,0.18)' : '#F8FAFC',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 12,
             }}
           >
-            <div style={{ fontWeight: 600, fontSize: '1.2rem', marginBottom: 8 }}>Product Details</div>
-            <div style={{ color: colors.text2, fontSize: '0.95rem', marginBottom: 12 }}>
-              Enter your product information. AI will clean the prompt and generate 8k images.
+            <div style={{ color: colors.text2, fontSize: '0.95rem', marginBottom: 6 }}>
+              Enter your product information. AI will craft a cinematic prompt and generate a professional video ad using <strong>Veo 3.1</strong>.
             </div>
 
-            <div style={{ display: 'flex', gap: 24 }}>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ fontWeight: 600, fontSize: '1rem' }}>Product Name</div>
-                <input name="productName" placeholder="e.g., Wireless Headphones" value={product.productName} onChange={handleChange} required style={{ padding: '12px', borderRadius: 8, border: `1px solid ${colors.border}`, fontSize: '1rem' }} />
+            <div style={{ display: 'flex', gap: 16 }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Product Name *</div>
+                <input name="productName" placeholder="e.g., Wireless Headphones" value={product.productName} onChange={handleChange} required style={{ padding: '10px', borderRadius: 8, border: `1px solid ${colors.border}`, fontSize: '0.95rem', background: colors.bg2, color: colors.text1 }} />
               </div>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ fontWeight: 600, fontSize: '1rem' }}>Category</div>
-                <input name="productCategory" placeholder="e.g., Electronics" value={product.productCategory} onChange={handleChange} required style={{ padding: '12px', borderRadius: 8, border: `1px solid ${colors.border}`, fontSize: '1rem' }} />
-              </div>
-            </div>
-
-            <div style={{ fontWeight: 600, fontSize: '1rem' }}>Product Description</div>
-            <textarea name="productDescription" placeholder="Describe in detail (Simple words or Roman Urdu allowed)..." value={product.productDescription} onChange={handleChange} required style={{ padding: '12px', borderRadius: 8, border: `1px solid ${colors.border}`, fontSize: '1rem', minHeight: 60 }} />
-
-            <div style={{ fontWeight: 600, fontSize: '1rem' }}>Key Features</div>
-            <textarea name="keyFeatures" placeholder="Noise cancellation, 30-hour battery..." value={product.keyFeatures} onChange={handleChange} required style={{ padding: '12px', borderRadius: 8, border: `1px solid ${colors.border}`, fontSize: '1rem', minHeight: 48 }} />
-
-            <div style={{ display: 'flex', gap: 24 }}>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ fontWeight: 600, fontSize: '1rem' }}>Target Audience</div>
-                <input name="targetAudience" placeholder="e.g., Professionals" value={product.targetAudience} onChange={handleChange} style={{ padding: '12px', borderRadius: 8, border: `1px solid ${colors.border}` }} />
-              </div>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ fontWeight: 600, fontSize: '1rem' }}>Price</div>
-                <input name="productPrice" placeholder="e.g., $199" value={product.productPrice} onChange={handleChange} style={{ padding: '12px', borderRadius: 8, border: `1px solid ${colors.border}` }} />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Category *</div>
+                <input name="productCategory" placeholder="e.g., Electronics" value={product.productCategory} onChange={handleChange} required style={{ padding: '10px', borderRadius: 8, border: `1px solid ${colors.border}`, fontSize: '0.95rem', background: colors.bg2, color: colors.text1 }} />
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 24 }}>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ fontWeight: 600, fontSize: '1rem' }}>Brand Name</div>
-                <input name="brandName" placeholder="BrandX" value={product.brandName} onChange={handleChange} style={{ padding: '12px', borderRadius: 8, border: `1px solid ${colors.border}` }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Product Description *</div>
+              <textarea name="productDescription" placeholder="Describe in detail..." value={product.productDescription} onChange={handleChange} required style={{ padding: '10px', borderRadius: 8, border: `1px solid ${colors.border}`, fontSize: '0.95rem', minHeight: 60, resize: 'vertical', background: colors.bg2, color: colors.text1 }} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Key Features *</div>
+              <textarea name="keyFeatures" placeholder="Noise cancellation, 30-hour battery..." value={product.keyFeatures} onChange={handleChange} required style={{ padding: '10px', borderRadius: 8, border: `1px solid ${colors.border}`, fontSize: '0.95rem', minHeight: 50, resize: 'vertical', background: colors.bg2, color: colors.text1 }} />
+            </div>
+
+            <div style={{ display: 'flex', gap: 16 }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Target Audience</div>
+                <input name="targetAudience" placeholder="e.g., Professionals" value={product.targetAudience} onChange={handleChange} style={{ padding: '10px', borderRadius: 8, border: `1px solid ${colors.border}`, background: colors.bg2, color: colors.text1 }} />
               </div>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ fontWeight: 600, fontSize: '1rem' }}>CTA Text</div>
-                <input name="callToAction" placeholder="Shop Now" value={product.callToAction} onChange={handleChange} style={{ padding: '12px', borderRadius: 8, border: `1px solid ${colors.border}` }} />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Price</div>
+                <input name="productPrice" placeholder="e.g., $199" value={product.productPrice} onChange={handleChange} style={{ padding: '10px', borderRadius: 8, border: `1px solid ${colors.border}`, background: colors.bg2, color: colors.text1 }} />
               </div>
             </div>
 
-            <button
-              type="submit"
+            <div style={{ display: 'flex', gap: 16 }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Brand Name</div>
+                <input name="brandName" placeholder="BrandX" value={product.brandName} onChange={handleChange} style={{ padding: '10px', borderRadius: 8, border: `1px solid ${colors.border}`, background: colors.bg2, color: colors.text1 }} />
+              </div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>CTA Text</div>
+                <input name="callToAction" placeholder="Shop Now" value={product.callToAction} onChange={handleChange} style={{ padding: '10px', borderRadius: 8, border: `1px solid ${colors.border}`, background: colors.bg2, color: colors.text1 }} />
+              </div>
+            </div>
+          </form>
+        </div>
+
+        {/* Right: Preview & Action */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          <div style={{ 
+            flex: 1, 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center", 
+            background: mode === 'dark' ? 'rgba(0,0,83,0.12)' : '#F3F4F6',
+            borderRadius: "12px", 
+            border: `2px dashed ${colors.border}`, 
+            minHeight: "450px", 
+            position: "relative", 
+            overflow: "hidden",
+            padding: "20px"
+          }}>
+            {videoUrl ? (
+                <div style={{ 
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', 
+                    width: '100%', height: '100%', justifyContent: 'center', gap: 12,
+                    position: 'relative'
+                }}>
+                    <video 
+                        ref={videoRef}
+                        src={videoUrl} 
+                        controls 
+                        autoPlay
+                        playsInline
+                        style={{ 
+                            maxWidth: "100%", 
+                            maxHeight: "380px", 
+                            borderRadius: "10px", 
+                            border: `3px solid ${colors.primary}`,
+                            boxShadow: '0 8px 25px rgba(0,0,0,0.2)' 
+                        }} 
+                    />
+                    {/* Maximize & Download overlay buttons */}
+                    <div style={{
+                        position: 'absolute', top: 10, right: 10,
+                        display: 'flex', gap: 8, zIndex: 10
+                    }}>
+                        <button
+                            onClick={() => setShowFullscreen(true)}
+                            title="Maximize"
+                            style={{
+                                width: 36, height: 36, borderRadius: 8,
+                                background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)',
+                                border: '1px solid rgba(255,255,255,0.15)',
+                                color: '#fff', display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.7)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.5)'}
+                        >
+                            <Maximize2 size={16} />
+                        </button>
+                        <button
+                            onClick={handleDownload}
+                            title="Download"
+                            style={{
+                                width: 36, height: 36, borderRadius: 8,
+                                background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)',
+                                border: '1px solid rgba(255,255,255,0.15)',
+                                color: '#fff', display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.7)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.5)'}
+                        >
+                            <Download size={16} />
+                        </button>
+                    </div>
+                    <div style={{ 
+                        fontSize: '0.8rem', color: colors.text2, 
+                        display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 
+                    }}>
+                        <span>🎬</span> Generated with Veo 3.1 — AI Cinematic Video
+                    </div>
+                </div>
+            ) : loading ? (
+                <div style={{ 
+                    display: "flex", flexDirection: "column", alignItems: "center", 
+                    color: colors.text2, textAlign: 'center', padding: '0 30px', gap: 18,
+                    animation: 'veoFadeIn 0.5s ease-out'
+                }}>
+                    <Loader2 size={52} style={{ animation: 'veoSpin 1.5s linear infinite', color: colors.primary }} />
+                    
+                    {enhancedPrompt ? (
+                        <p style={{ 
+                            margin: 0, fontSize: "0.85rem", fontStyle: 'italic',
+                            lineHeight: 1.6, maxWidth: 400,
+                            animation: 'veoPulse 3s ease-in-out infinite',
+                            color: colors.text2
+                        }}>
+                            "{enhancedPrompt}"
+                        </p>
+                    ) : (
+                        <p style={{ 
+                            margin: 0, fontSize: "0.95rem", fontWeight: 500,
+                            animation: 'veoPulse 2s ease-in-out infinite'
+                        }}>
+                            Crafting your cinematic prompt...
+                        </p>
+                    )}
+
+                    {progressPhase === 'generating' && (
+                        <p style={{ 
+                            margin: 0, fontSize: "0.8rem", opacity: 0.5,
+                        }}>
+                            Veo 3.1 is rendering — typically 2-4 minutes
+                        </p>
+                    )}
+                </div>
+            ) : (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", color: colors.text2, opacity: 0.6, textAlign: 'center', padding: '0 20px' }}>
+                  <Video size={64} style={{ marginBottom: "15px" }} />
+                  <p style={{ margin: 0, fontSize: "1.1rem" }}>Submit the form to generate a cinematic AI video ad powered by Veo 3.1.</p>
+                </div>
+            )}
+          </div>
+
+          {/* Action Buttons Below Placeholder */}
+          {videoUrl ? (
+            <div style={{ display: 'flex', gap: '12px' }}>
+                <button 
+                    onClick={handleDownload}
+                    style={{ 
+                        flex: 1, padding: '16px', borderRadius: 12, 
+                        background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary || colors.primary})`, 
+                        color: '#fff', border: 'none', 
+                        fontWeight: 600, fontSize: '1rem', cursor: 'pointer', 
+                        transition: 'all 0.3s ease',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        boxShadow: `0 6px 20px ${colors.primary}40`
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 10px 30px ${colors.primary}60`; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 6px 20px ${colors.primary}40`; }}
+                >
+                    <Download size={18} /> Download Video
+                </button>
+                <button 
+                    onClick={handleReset}
+                    style={{ 
+                        flex: 1, padding: '16px', borderRadius: 12, 
+                        background: 'transparent', 
+                        color: colors.text1, 
+                        border: `1px solid ${colors.border}`, 
+                        fontWeight: 600, fontSize: '1rem', cursor: 'pointer', 
+                        transition: 'all 0.3s ease',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                    Create Another Ad
+                </button>
+            </div>
+          ) : (
+            <button 
+              type="submit" 
+              form="video-ad-form"
               disabled={loading}
               style={{
-                marginTop: 12, padding: '14px 0', borderRadius: 8, fontWeight: 700, fontSize: '1.1rem', border: 'none', cursor: 'pointer',
-                background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`, color: '#fff',
-                boxShadow: `0 4px 16px ${colors.primary}33`, transition: '0.3s',
+                width: "100%",
+                padding: "16px",
+                background: loading ? "#a3a9d9" : colors.primary,
+                border: "none",
+                color: "white",
+                fontSize: "1.1rem",
+                borderRadius: "12px",
+                cursor: loading ? "not-allowed" : "pointer",
+                fontWeight: "600",
+                transition: "all 0.3s ease",
               }}
             >
-              {loading ? 'AI Processing...' : 'Generate Images'}
+              {loading ? "AI Processing — Please Wait..." : "Generate Video"}
             </button>
-          </form>
+          )}
 
-          {/* Right: Preview & Logic Instructions */}
-          <div style={{ flex: 1, minWidth: 340 }}>
-            <div style={{ fontWeight: 600, fontSize: '1.2rem', marginBottom: 8 }}>AI Transformation Preview</div>
-            <div style={{ minHeight: 180, background: mode === 'dark' ? 'rgba(0,0,83,0.12)' : '#F3F4F6', borderRadius: 12, border: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18, color: colors.text2, padding: 20 }}>
-              {enhancedPrompt ? (
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ color: colors.primary, fontWeight: 700, marginBottom: 10 }}>Professional English Prompt Generated:</div>
-                  <p style={{ fontStyle: 'italic', fontSize: '1.05rem' }}>"{enhancedPrompt}"</p>
-                </div>
-              ) : (
-                'Submit the form. AI will clean vulgarity and create a cinematic 8k prompt here.'
-              )}
-            </div>
-
-            <div style={{ background: mode === 'dark' ? 'rgba(0,0,83,0.09)' : '#F8FAFC', borderRadius: 10, border: `1px solid ${colors.border}`, padding: '18px 14px', color: colors.text2, fontSize: '0.98rem' }}>
-              <div style={{ fontWeight: 700, color: colors.text1, marginBottom: 6 }}>Active Modules:</div>
-              <ul style={{ margin: '8px 0 0 18px' }}>
-                <li>✨ <strong>One-Shot Enhancement:</strong> Translates & Improves details.</li>
-                <li>🚫 <strong>Safety Filter:</strong> Removes vulgar or offensive words.</li>
-                <li>🛠️ <strong>Negative Prompting:</strong> Prevents blurs and distortions.</li>
-                <li>🎥 <strong>Video Logic:</strong> Stitches images at 1 FPS.</li>
-              </ul>
-            </div>
-          </div>
         </div>
-      )}
+      </div>
 
-      {step === 'preview' && (
-        <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: 340 }}>
-            <div style={{ fontWeight: 600, fontSize: '1.2rem', marginBottom: 8 }}>Generated Assets</div>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 18 }}>
-              {images.map((url, idx) => (
-                <img key={idx} src={url} alt={`Gen ${idx}`} style={{ width: 140, height: 100, borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', objectFit: 'cover' }} />
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: 12 }}>
-                <button onClick={handleGenerateVideo} style={{ flex: 2, padding: '14px', borderRadius: 8, background: colors.primary, color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer' }}>Generate Video Ad</button>
-                <button onClick={handleRegenerate} style={{ flex: 1, padding: '14px', borderRadius: 8, background: colors.accent, color: '#fff', border: 'none', cursor: 'pointer' }}>Regenerate</button>
-            </div>
-            <button onClick={handleEdit} style={{ marginTop: 12, width: '100%', padding: '10px', borderRadius: 8, background: 'transparent', color: colors.text1, border: `1px solid ${colors.border}`, cursor: 'pointer' }}>Edit Details</button>
-          </div>
-        </div>
-      )}
+      {/* ── Fullscreen Video Modal ── */}
+      {showFullscreen && videoUrl && (
+        <div 
+          style={{ 
+            position: 'fixed', 
+            inset: 0, 
+            zIndex: 2000, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            background: 'rgba(0,0,0,0.92)', 
+            backdropFilter: 'blur(20px)',
+            padding: 24,
+            animation: 'veoFadeIn 0.3s ease-out'
+          }}
+          onClick={() => setShowFullscreen(false)}
+        >
+          <div 
+            style={{ 
+              position: 'relative', 
+              maxWidth: '90vw', 
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 16
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setShowFullscreen(false)}
+              style={{
+                position: 'absolute', top: -16, right: -16, zIndex: 10,
+                width: 40, height: 40, borderRadius: 10,
+                background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                color: '#fff', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', cursor: 'pointer',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+            >
+              <X size={20} />
+            </button>
 
-      {step === 'video' && videoUrl && (
-        <div style={{ textAlign: 'center', width: '100%' }}>
-          <div style={{ fontWeight: 600, fontSize: '1.5rem', marginBottom: 20 }}>Your Marketing Video is Ready</div>
-          <video src={videoUrl} controls width={600} style={{ borderRadius: 15, border: `5px solid ${colors.primary}`, boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }} />
-          <div style={{ marginTop: 24 }}>
-             <button onClick={handleEdit} style={{ padding: '12px 40px', borderRadius: 8, background: colors.primary, color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer' }}>Create Another Ad</button>
+            <video 
+              src={videoUrl} 
+              controls 
+              autoPlay 
+              playsInline
+              style={{ 
+                maxWidth: '85vw', 
+                maxHeight: '80vh', 
+                borderRadius: 16,
+                boxShadow: '0 25px 80px rgba(0,0,0,0.5)'
+              }} 
+            />
+
+            {/* Bottom actions in fullscreen */}
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <button
+                onClick={handleDownload}
+                style={{
+                  padding: '12px 24px', borderRadius: 12,
+                  background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary || colors.primary})`,
+                  color: '#fff', border: 'none', fontWeight: 700, fontSize: 14,
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
+                  boxShadow: `0 6px 20px ${colors.primary}40`,
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
+              >
+                <Download size={16} /> Download Video
+              </button>
+              <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)' }}>
+                🎬 Veo 3.1 AI Video
+              </span>
+            </div>
           </div>
         </div>
       )}

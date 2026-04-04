@@ -3,6 +3,6 @@ pymongo
 flask-cors
 python-dotenv
 werkzeug
-google-generativeai
+google-genai
 cloudinary
 bcrypt

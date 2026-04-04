@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { BarChart3, Video, MessageSquare, Zap, Sparkles, Users, Layers } from "lucide-react";
+import { BarChart3, Video, MessageSquare, Zap, Sparkles, Users, Layers, Image, Download, Maximize, X, Rocket } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import Navbar from "../components/common/Navbar";
 import { API_BASE_URL } from "../utils/constants";
+import { hasVulgarity } from "../utils/profanityFilter";
 
 import Modal from "../components/Dashboard/Modal";
 import UserManagementModal from "../components/Dashboard/UserManagementModal";
@@ -46,11 +47,12 @@ const Dashboard = ({ onLogout, onNavigate }) => {
   const [showCaptionBox, setShowCaptionBox] = useState(false);
   const [nameValue, setNameValue] = useState("");
   const [descriptionValue, setDescriptionValue] = useState("");
-  const [adTypes, setAdTypes] = useState([]);
+  const [adType, setAdType] = useState("logo");
   const [colors2, setColors2] = useState(["#0ea5e9", "#111827"]);
   const [style, setStyle] = useState("modern, minimal");
   const [size, setSize] = useState("1024x1024");
   const [generatedResult, setGeneratedResult] = useState(null);
+  const [fullScreenImage, setFullScreenImage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [priceValue, setPriceValue] = useState("");
   const [captionType, setCaptionType] = useState("without_caption");
@@ -84,15 +86,13 @@ const Dashboard = ({ onLogout, onNavigate }) => {
   // ProductInputDetail Handlers
   const handleCheckboxChange = (e) => {
     const { value, checked } = e.target;
-
-    if (value === "poster") {
-      setShowCaptionBox(checked);
-    }
-
     if (checked) {
-      setAdTypes((prev) => [...prev, value]);
-    } else {
-      setAdTypes((prev) => prev.filter((v) => v !== value));
+      setAdType(value);
+      if (value === "poster") {
+        setShowCaptionBox(true);
+      } else {
+        setShowCaptionBox(false);
+      }
     }
   };
 
@@ -109,6 +109,12 @@ const Dashboard = ({ onLogout, onNavigate }) => {
 
   const handleProductSubmit = async (e) => {
     e.preventDefault();
+
+    if (hasVulgarity(nameValue) || hasVulgarity(descriptionValue)) {
+      alert("Inappropriate language detected. Please remove offensive or vulgar words before generating.");
+      return;
+    }
+
     setIsLoading(true);
     setGeneratedResult(null);
 
@@ -131,41 +137,42 @@ const Dashboard = ({ onLogout, onNavigate }) => {
         }
       }
 
+      const payload = {
+        type: adType,
+        brandName: nameValue,
+        tagline: descriptionValue,
+        colors: colors2,
+        style: style,
+        description: `Product: ${nameValue}. ${descriptionValue}`,
+        size: size,
+        price: priceValue,
+        captionType: captionType,
+        referenceImages: cloudinaryUrls
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/generate-design`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
       const results = [];
 
-      for (const type of adTypes) {
-        const payload = {
-          type: type,
-          brandName: nameValue,
-          tagline: descriptionValue,
-          colors: colors2,
-          style: style,
-          description: `Product: ${nameValue}. ${descriptionValue}`,
-          size: size,
-          price: priceValue,
-          captionType: captionType,
-          referenceImages: cloudinaryUrls
-        };
-
-        const response = await fetch(`${API_BASE_URL}/api/generate-design`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          results.push({ type, ...data });
-        } else {
-          alert(`Error generating ${type}: ${data.error || data.details}`);
-        }
+      if (response.ok) {
+        results.push({ type: adType, ...data });
+      } else {
+        alert(`Error generating ${adType}: ${data.error || data.details}`);
       }
 
       setGeneratedResult(results);
-      alert(`Successfully generated ${results.length} design(s)!`);
+      // Auto-scroll to results so the user sees the output immediately without clicking OK
+      setTimeout(() => {
+        const el = document.getElementById("results-section");
+        if (el) el.scrollIntoView({ behavior: "smooth" });
+      }, 100);
     } catch (error) {
       alert("Network error: " + error.message);
     } finally {
@@ -194,7 +201,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
   const isFormValid =
     nameValue.trim() !== "" &&
     descriptionValue.trim() !== "" &&
-    adTypes.length > 0;
+    adType !== "";
 
   const handleAddSubUser = async () => {
     const newErrors = {};
@@ -297,7 +304,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
       {/* Video Ad Module Modal/Page */}
       {showVideoAdModule && (
         <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(0,0,0,0.08)", zIndex: 1000, overflow: "auto" }}>
-          <div style={{ maxWidth: 900, margin: "60px auto", background: colors.cardBg, borderRadius: 20, boxShadow: "0 10px 40px rgba(0,0,0,0.12)", padding: 40 }}>
+          <div style={{ width: "95%", maxWidth: 1200, margin: "60px auto", background: colors.cardBg, borderRadius: 20, boxShadow: "0 10px 40px rgba(0,0,0,0.12)", padding: 40, position: "relative" }}>
             <button style={{ float: "right", fontSize: 22, background: "none", border: "none", cursor: "pointer", color: colors.text2 }} onClick={() => setShowVideoAdModule(false)}>&times;</button>
             <VideoAdModule />
           </div>
@@ -600,13 +607,13 @@ const Dashboard = ({ onLogout, onNavigate }) => {
       )}
 
       {/* Footer */}
-      {/* Footer */}
       <footer
         style={{
           padding: "60px 40px 30px",
           borderTop: `1px solid ${colors.border}`,
-          background: mode === "dark" ? "#00003A" : "#1a1a2e",
-          color: "#C7D2FE",
+          background: mode === "dark" ? "rgba(0, 0, 40, 0.95)" : "#F1F5F9",
+          color: colors.text2,
+          transition: "all 0.3s ease",
         }}
       >
         <div
@@ -621,15 +628,25 @@ const Dashboard = ({ onLogout, onNavigate }) => {
         >
           <div style={{ textAlign: "left" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 15 }}>
-              <img
-                src="https://i.postimg.cc/hGxgNpDn/smartads-logo.png"
-                alt="SmartAds"
-                style={{ width: 35, height: 35 }}
-              />
+              <div
+                style={{
+                  width: 35,
+                  height: 35,
+                  borderRadius: 10,
+                  background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: `0 4px 12px ${colors.primary}40`,
+                }}
+              >
+                <Rocket size={18} color="white" />
+              </div>
               <h3
                 style={{
                   fontSize: "1.3rem",
                   fontWeight: "bold",
+                  margin: 0,
                   background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
@@ -638,13 +655,13 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                 SmartAds
               </h3>
             </div>
-            <p style={{ fontSize: "0.95rem", lineHeight: 1.6, opacity: 0.8 }}>
+            <p style={{ fontSize: "0.95rem", lineHeight: 1.6, opacity: 0.8, color: colors.text2 }}>
               AI-Powered Marketing Platform helping businesses create professional content in minutes.
             </p>
           </div>
 
           <div style={{ textAlign: "left" }}>
-            <h4 style={{ fontSize: "1.1rem", marginBottom: 15, fontWeight: "bold", color: "#F0F4FF" }}>
+            <h4 style={{ fontSize: "1.1rem", marginBottom: 15, fontWeight: "bold", color: colors.text1 }}>
               Contact Us
             </h4>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -671,7 +688,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                   </svg>
                 </div>
-                <span style={{ fontSize: "0.95rem" }}>03031233445</span>
+                <span style={{ fontSize: "0.95rem", color: colors.text2 }}>03031233445</span>
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -698,7 +715,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                     <polyline points="22,6 12,13 2,6" />
                   </svg>
                 </div>
-                <span style={{ fontSize: "0.95rem", wordBreak: "break-all" }}>nakhalsheikh4@gmail.com</span>
+                <span style={{ fontSize: "0.95rem", wordBreak: "break-all", color: colors.text2 }}>nakhalsheikh4@gmail.com</span>
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -725,7 +742,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                     <circle cx="12" cy="10" r="3" />
                   </svg>
                 </div>  
-                <span style={{ fontSize: "0.95rem" }}>NUCES Chiniot, Pakistan</span>
+                <span style={{ fontSize: "0.95rem", color: colors.text2 }}>NUCES Chiniot, Pakistan</span>
               </div>
             </div>
           </div>
@@ -734,11 +751,11 @@ const Dashboard = ({ onLogout, onNavigate }) => {
         <div
           style={{
             paddingTop: 30,
-            borderTop: "1px solid rgba(199, 210, 254, 0.2)",
+            borderTop: `1px solid ${colors.border}`,
             textAlign: "center",
           }}
         >
-          <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.7 }}>
+          <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.7, color: colors.text2 }}>
             © 2025 SmartAds. All rights reserved.
           </p>
         </div>
@@ -759,8 +776,8 @@ const Dashboard = ({ onLogout, onNavigate }) => {
           zIndex: 1000
         }}>
           <div style={{
-            width: "90%",
-            maxWidth: "450px",
+            width: "95%",
+            maxWidth: "1200px",
             background: colors.cardBg,
             padding: "30px",
             borderRadius: "18px",
@@ -771,10 +788,14 @@ const Dashboard = ({ onLogout, onNavigate }) => {
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
               <h2 style={{ color: colors.text1, margin: 0, fontSize: "1.5rem", fontWeight: 600 }}>Product Input Detail</h2>
-              <button onClick={resetProductForm} style={{ background: "none", border: "none", fontSize: "24px", cursor: "pointer", color: colors.text2 }}>×</button>
+              <button onClick={() => { setShowProductForm(false); setGeneratedResult(null); }} style={{ background: "none", border: "none", fontSize: "24px", cursor: "pointer", color: colors.text2 }}>×</button>
             </div>
 
-            <form onSubmit={handleProductSubmit}>
+            <div style={{ display: "flex", gap: "30px", flexDirection: window.innerWidth < 768 ? "column" : "row" }}>
+              
+              {/* Left Panel: Inputs */}
+              <div style={{ flex: 1 }}>
+                <form id="product-form" onSubmit={handleProductSubmit}>
               {/* Product Name */}
               <label style={{ color: colors.text1, display: "block", marginBottom: "6px", fontWeight: "500", fontSize: "15px" }}>
                 <b>Product Name</b> <span style={{ color: "red", marginLeft: "4px" }}>*</span>
@@ -791,7 +812,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                   border: `1px solid ${colors.border}`,
                   borderRadius: "10px",
                   outline: "none",
-                  marginBottom: "18px",
+                  marginBottom: "10px",
                   background: colors.bg2,
                   fontSize: "14px",
                   color: colors.text1,
@@ -814,11 +835,11 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                   border: `1px solid ${colors.border}`,
                   borderRadius: "10px",
                   outline: "none",
-                  marginBottom: "18px",
+                  marginBottom: "10px",
                   background: colors.bg2,
                   fontSize: "14px",
                   color: colors.text1,
-                  minHeight: "100px",
+                  minHeight: "80px",
                   resize: "vertical",
                   boxSizing: "border-box"
                 }}
@@ -843,7 +864,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                   border: `1px solid ${colors.border}`,
                   borderRadius: "10px",
                   outline: "none",
-                  marginBottom: "18px",
+                  marginBottom: "10px",
                   background: colors.bg2,
                   fontSize: "14px",
                   color: colors.text1,
@@ -851,55 +872,18 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                 }}
               />
 
-              {/* Ad Type */}
-              <label style={{ color: colors.text1, display: "block", marginBottom: "6px", fontWeight: "500", fontSize: "15px" }}>
-                <b>What would you like to create?</b> <span style={{ color: "red", marginLeft: "4px" }}>*</span>
-              </label>
-
-              <div style={{
-                marginBottom: "18px",
-                padding: "14px",
-                background: colors.bg2,
-                border: `1px solid ${colors.border}`,
-                borderRadius: "12px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px"
-              }}>
-                <label style={{ color: colors.text1, display: "flex", alignItems: "center", cursor: "pointer", gap: "8px", margin: 0 }}>
-                  <input
-                    type="checkbox"
-                    value="logo"
-                    checked={adTypes.includes("logo")}
-                    onChange={handleCheckboxChange}
-                    style={{ cursor: "pointer" }}
-                  />
-                  Logo
-                </label>
-
-                <label style={{ color: colors.text1, display: "flex", alignItems: "center", cursor: "pointer", gap: "8px", margin: 0 }}>
-                  <input
-                    type="checkbox"
-                    value="poster"
-                    checked={adTypes.includes("poster")}
-                    onChange={handleCheckboxChange}
-                    style={{ cursor: "pointer" }}
-                  />
-                  Poster
-                </label>
-              </div>
-
-              {/* Caption Box */}
-              {showCaptionBox && (
-                <div style={{ marginBottom: "18px" }}>
+              {/* Ad Type & Caption Row */}
+              <div style={{ display: "flex", gap: "20px", marginBottom: "10px" }}>
+                {/* Ad Type */}
+                <div style={{ flex: 1, transition: "flex 0.3s ease" }}>
                   <label style={{ color: colors.text1, display: "block", marginBottom: "6px", fontWeight: "500", fontSize: "15px" }}>
-                    <b>Do you want a caption?</b>
+                    <b>Type:</b> <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                   </label>
                   <div style={{
-                    padding: "14px",
+                    padding: "12px",
                     background: colors.bg2,
                     border: `1px solid ${colors.border}`,
-                    borderRadius: "12px",
+                    borderRadius: "10px",
                     display: "flex",
                     flexDirection: "column",
                     gap: "10px"
@@ -907,28 +891,69 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                     <label style={{ color: colors.text1, display: "flex", alignItems: "center", cursor: "pointer", gap: "8px", margin: 0 }}>
                       <input
                         type="radio"
-                        name="captionChoice"
-                        value="with_caption"
-                        checked={captionType === "with_caption"}
-                        onChange={(e) => setCaptionType(e.target.value)}
+                        name="main_ad_type"
+                        value="logo"
+                        checked={adType === "logo"}
+                        onChange={handleCheckboxChange}
                         style={{ cursor: "pointer" }}
                       />
-                      With Caption
+                      Logo
                     </label>
                     <label style={{ color: colors.text1, display: "flex", alignItems: "center", cursor: "pointer", gap: "8px", margin: 0 }}>
                       <input
                         type="radio"
-                        name="captionChoice"
-                        value="without_caption"
-                        checked={captionType === "without_caption"}
-                        onChange={(e) => setCaptionType(e.target.value)}
+                        name="main_ad_type"
+                        value="poster"
+                        checked={adType === "poster"}
+                        onChange={handleCheckboxChange}
                         style={{ cursor: "pointer" }}
                       />
-                      Without Caption
+                      Poster
                     </label>
                   </div>
                 </div>
-              )}
+
+                {/* Caption Box */}
+                {showCaptionBox && (
+                  <div style={{ flex: 1, animation: "fadeIn 0.3s ease-in-out" }}>
+                    <label style={{ color: colors.text1, display: "block", marginBottom: "6px", fontWeight: "500", fontSize: "15px" }}>
+                      <b>Add Caption?</b>
+                    </label>
+                    <div style={{
+                      padding: "12px",
+                      background: colors.bg2,
+                      border: `1px solid ${colors.border}`,
+                      borderRadius: "10px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "10px"
+                    }}>
+                      <label style={{ color: colors.text1, display: "flex", alignItems: "center", cursor: "pointer", gap: "8px", margin: 0 }}>
+                        <input
+                          type="radio"
+                          name="captionChoice"
+                          value="with_caption"
+                          checked={captionType === "with_caption"}
+                          onChange={(e) => setCaptionType(e.target.value)}
+                          style={{ cursor: "pointer" }}
+                        />
+                        Yes
+                      </label>
+                      <label style={{ color: colors.text1, display: "flex", alignItems: "center", cursor: "pointer", gap: "8px", margin: 0 }}>
+                        <input
+                          type="radio"
+                          name="captionChoice"
+                          value="without_caption"
+                          checked={captionType === "without_caption"}
+                          onChange={(e) => setCaptionType(e.target.value)}
+                          style={{ cursor: "pointer" }}
+                        />
+                        No
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Reference Images */}
               <label style={{ color: colors.text1, display: "block", marginBottom: "6px", fontWeight: "500", fontSize: "15px" }}>
@@ -945,7 +970,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                   border: `1px solid ${colors.border}`,
                   borderRadius: "10px",
                   background: colors.bg2,
-                  marginBottom: "18px",
+                  marginBottom: "10px",
                   fontSize: "14px",
                   color: colors.text1,
                   boxSizing: "border-box",
@@ -988,50 +1013,55 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                 ))}
               </div>
 
-              {/* Color Picker */}
-              <label style={{ color: colors.text1, display: "block", marginBottom: "6px", fontWeight: "500", fontSize: "15px" }}>
-                <b>Brand Colors</b>
-              </label>
-              <div style={{ display: "flex", gap: "10px", marginBottom: "18px" }}>
-                <input
-                  type="color"
-                  value={colors2[0]}
-                  onChange={(e) => setColors2([e.target.value, colors2[1]])}
-                  style={{ width: "50px", height: "40px", border: "none", borderRadius: "8px", cursor: "pointer" }}
-                />
-                <input
-                  type="color"
-                  value={colors2[1]}
-                  onChange={(e) => setColors2([colors2[0], e.target.value])}
-                  style={{ width: "50px", height: "40px", border: "none", borderRadius: "8px", cursor: "pointer" }}
-                />
-              </div>
+              <div style={{ display: "flex", gap: "20px", marginBottom: "10px" }}>
+                {/* Brand Colors */}
+                <div style={{ flex: 1 }}>
+                  <label style={{ color: colors.text1, display: "block", marginBottom: "6px", fontWeight: "500", fontSize: "15px" }}>
+                    <b>Brand Colors</b>
+                  </label>
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    <input
+                      type="color"
+                      value={colors2[0]}
+                      onChange={(e) => setColors2([e.target.value, colors2[1]])}
+                      style={{ width: "100%", height: "40px", border: "none", borderRadius: "8px", cursor: "pointer" }}
+                    />
+                    <input
+                      type="color"
+                      value={colors2[1]}
+                      onChange={(e) => setColors2([colors2[0], e.target.value])}
+                      style={{ width: "100%", height: "40px", border: "none", borderRadius: "8px", cursor: "pointer" }}
+                    />
+                  </div>
+                </div>
 
-              {/* Style */}
-              <label style={{ color: colors.text1, display: "block", marginBottom: "6px", fontWeight: "500", fontSize: "15px" }}>
-                <b>Design Style</b>
-              </label>
-              <select
-                value={style}
-                onChange={(e) => setStyle(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: "10px",
-                  background: colors.bg2,
-                  marginBottom: "18px",
-                  fontSize: "14px",
-                  color: colors.text1,
-                  boxSizing: "border-box"
-                }}
-              >
-                <option value="modern, minimal">Modern & Minimal</option>
-                <option value="bold, geometric">Bold & Geometric</option>
-                <option value="elegant, professional">Elegant & Professional</option>
-                <option value="playful, creative">Playful & Creative</option>
-                <option value="vintage, retro">Vintage & Retro</option>
-              </select>
+                {/* Style */}
+                <div style={{ flex: 1 }}>
+                  <label style={{ color: colors.text1, display: "block", marginBottom: "6px", fontWeight: "500", fontSize: "15px" }}>
+                    <b>Design Style</b>
+                  </label>
+                  <select
+                    value={style}
+                    onChange={(e) => setStyle(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: `1px solid ${colors.border}`,
+                      borderRadius: "10px",
+                      background: colors.bg2,
+                      fontSize: "14px",
+                      color: colors.text1,
+                      boxSizing: "border-box"
+                    }}
+                  >
+                    <option value="modern, minimal">Modern & Minimal</option>
+                    <option value="bold, geometric">Bold & Geometric</option>
+                    <option value="elegant, professional">Elegant & Professional</option>
+                    <option value="playful, creative">Playful & Creative</option>
+                    <option value="vintage, retro">Vintage & Retro</option>
+                  </select>
+                </div>
+              </div>
 
               {/* Size */}
               <label style={{ color: colors.text1, display: "block", marginBottom: "6px", fontWeight: "500", fontSize: "15px" }}>
@@ -1046,7 +1076,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                   border: `1px solid ${colors.border}`,
                   borderRadius: "10px",
                   background: colors.bg2,
-                  marginBottom: "18px",
+                  marginBottom: "10px",
                   fontSize: "14px",
                   color: colors.text1,
                   boxSizing: "border-box"
@@ -1057,54 +1087,116 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                 <option value="2048x2048">2048x2048 (Large)</option>
               </select>
 
-              <button 
-                type="submit" 
-                disabled={!isFormValid || isLoading}
-                style={{
-                  width: "100%",
-                  padding: "14px",
-                  background: isFormValid && !isLoading ? colors.primary : "#a3a9d9",
-                  border: "none",
-                  color: "white",
-                  fontSize: "16px",
-                  borderRadius: "12px",
-                  cursor: isFormValid && !isLoading ? "pointer" : "not-allowed",
-                  fontWeight: "600",
-                  transition: "all 0.3s ease"
-                }}
-                onMouseEnter={e => {
-                  if (isFormValid && !isLoading) {
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = `0 8px 20px ${colors.primary}40`;
-                  }
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-              >
-                {isLoading ? "Generating..." : "Generate"}
-              </button>
-            </form>
+                </form>
+              </div> {/* End Left Panel */}
 
-            {/* Results Section */}
-            {generatedResult && generatedResult.length > 0 && (
-              <div style={{ marginTop: "30px", padding: "20px", background: colors.bg2, borderRadius: "12px" }}>
-                <h3 style={{ marginBottom: "15px", color: colors.text1 }}>Generated Designs</h3>
-                {generatedResult.map((item, idx) => (
-                  <div key={idx} style={{ marginBottom: "20px", padding: "15px", background: colors.cardBg, borderRadius: "10px", border: `1px solid ${colors.border}` }}>
-                    <p style={{ color: colors.text1 }}><b>Type:</b> {item.type}</p>
-                    <p style={{ color: colors.text1 }}><b>File:</b> {item.fileName}</p>
-                    <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ color: colors.primary, fontWeight: "600" }}>
-                      View on Cloudinary →
-                    </a>
-                    <br />
-                    <img src={item.url} alt={item.type} style={{ marginTop: "10px", maxWidth: "100%", borderRadius: "8px" }} />
-                  </div>
-                ))}
-              </div>
-            )}
+              {/* Right Panel: Image Display & Actions */}
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "20px" }}>
+                
+                {/* Image Placeholder or Result */}
+                <div style={{ 
+                  flex: 1, 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "center", 
+                  background: colors.bg2, 
+                  borderRadius: "12px", 
+                  border: `2px dashed ${colors.border}`, 
+                  minHeight: "450px", 
+                  position: "relative", 
+                  overflow: "hidden" 
+                }}>
+                  {generatedResult && generatedResult.length > 0 ? (
+                    <div 
+                      style={{ position: "relative", width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc" }}
+                      onMouseEnter={(e) => { if(e.currentTarget.lastElementChild) e.currentTarget.lastElementChild.style.opacity = '1'; }}
+                      onMouseLeave={(e) => { if(e.currentTarget.lastElementChild) e.currentTarget.lastElementChild.style.opacity = '0'; }}
+                    >
+                      <img src={generatedResult[0].url} alt="Generated Design" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+                      
+                      {/* Hover Overlay */}
+                      <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", gap: "20px", opacity: 0, transition: "opacity 0.3s ease" }}>
+                        <button 
+                          onClick={() => window.open(generatedResult[0].url.replace('/upload/', '/upload/fl_attachment/'), "_blank")} 
+                          style={{ background: "white", border: "none", borderRadius: "50%", padding: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#111827", transition: "transform 0.2s ease" }} 
+                          onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"} 
+                          onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"} 
+                          title="Download"
+                        >
+                          <Download size={24} />
+                        </button>
+                        <button 
+                          onClick={() => setFullScreenImage(generatedResult[0].url)} 
+                          style={{ background: "white", border: "none", borderRadius: "50%", padding: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#111827", transition: "transform 0.2s ease" }} 
+                          onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"} 
+                          onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"} 
+                          title="Full Screen"
+                        >
+                          <Maximize size={24} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", color: colors.text2, opacity: 0.6 }}>
+                      <Image size={64} style={{ marginBottom: "15px" }} />
+                      <p style={{ margin: 0, fontSize: "1.1rem" }}>Your generated design will appear here</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Generate Button on the Right */}
+                <button 
+                  type="submit" 
+                  form="product-form"
+                  disabled={!isFormValid || isLoading}
+                  style={{
+                    width: "100%",
+                    padding: "16px",
+                    background: isFormValid && !isLoading ? colors.primary : "#a3a9d9",
+                    border: "none",
+                    color: "white",
+                    fontSize: "1.1rem",
+                    borderRadius: "12px",
+                    cursor: isFormValid && !isLoading ? "pointer" : "not-allowed",
+                    fontWeight: "600",
+                    transition: "all 0.3s ease",
+                    boxShadow: isFormValid && !isLoading ? `0 4px 15px ${colors.primary}40` : "none"
+                  }}
+                  onMouseEnter={e => {
+                    if (isFormValid && !isLoading) {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = `0 8px 25px ${colors.primary}60`;
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    if (isFormValid && !isLoading) {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = `0 4px 15px ${colors.primary}40`;
+                    }
+                  }}
+                >
+                  {isLoading ? "Generating..." : "Generate Image"}
+                </button>
+              </div> {/* End Right Panel */}
+            </div> {/* End Inner Flex Row Container */}
           </div>
+        </div>
+      )}
+
+      {/* Fullscreen Image Overlay */}
+      {fullScreenImage && (
+        <div style={{ 
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0, 
+          background: "rgba(0,0,0,0.9)", zIndex: 2000, 
+          display: "flex", alignItems: "center", justifyContent: "center" 
+        }}>
+          <button 
+            onClick={() => setFullScreenImage(null)} 
+            style={{ position: "absolute", top: "30px", right: "30px", background: "none", border: "none", color: "white", cursor: "pointer", padding: "10px" }}
+          >
+            <X size={36} />
+          </button>
+          <img src={fullScreenImage} alt="Fullscreen Display" style={{ maxWidth: "90vw", maxHeight: "90vh", objectFit: "contain", borderRadius: "8px" }} />
         </div>
       )}
 

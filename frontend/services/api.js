@@ -165,25 +165,35 @@ export const templateAPI = {
 
 // NOTE: Use the correct backend endpoint with /api prefix
 export const videoAdAPI = {
-  // --- NEW: Added enhancePrompt function ---
+  // Enhance raw product details into a cinematic prompt via Gemini
   enhancePrompt: (productDetails) =>
     apiRequest('/api/enhance-prompt', {
       method: 'POST',
       body: JSON.stringify(productDetails),
     }),
 
-  generateImages: (data) =>
-    apiRequest('/api/generate-images', {
+  // Generate video via Veo 3.1 — accepts { prompt: "..." }
+  // This call can take 2-5 minutes as Veo generates the video asynchronously
+  generateVideo: (data) => {
+    const url = `${API_BASE_URL}/api/generate-video`;
+    return fetch(url, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
-    }),
-
-  // --- NEW: Added generateVideo function ---
-  generateVideo: (data) =>
-    apiRequest('/api/generate-video', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+      signal: AbortSignal.timeout(360000), // 6 minute timeout for Veo
+    })
+      .then(async (response) => {
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error || 'Video generation failed');
+        }
+        return result;
+      })
+      .catch((error) => {
+        console.error('Video API Error:', error);
+        throw error;
+      });
+  },
 };
 
 export default {

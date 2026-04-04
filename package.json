@@ -13,6 +13,7 @@
     "@google/genai": "^1.41.0",
     "@react-oauth/google": "^0.12.2",
     "lucide-react": "^0.555.0",
+    "mongodb": "^7.1.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
