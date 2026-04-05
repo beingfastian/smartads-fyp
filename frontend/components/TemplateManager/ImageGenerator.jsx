@@ -16,9 +16,9 @@ import {
  * ImageGenerator Component
  * Generates high-quality logos and posters using Gemini API
  */
-const ImageGenerator = ({ onClose }) => {
+const ImageGenerator = ({ onClose, initialPrompt = '' }) => {
   const { colors } = useTheme();
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(initialPrompt);
   const [generatedImage, setGeneratedImage] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingType, setGeneratingType] = useState(null); // 'logo' or 'poster'

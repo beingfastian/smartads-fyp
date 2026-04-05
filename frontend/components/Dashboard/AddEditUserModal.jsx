@@ -126,12 +126,22 @@ const AddEditUserModal = ({
             padding: "14px 0",
             borderRadius: 10,
             border: "none",
-            background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
-            color: "white",
+            background: colors.primary,
+            color: mode === 'dark' ? "#0B0E14" : "white",
             cursor: "pointer",
             fontSize: "1rem",
-            fontWeight: "600",
+            fontWeight: "700",
             marginTop: 10,
+            boxShadow: `0 4px 12px ${colors.primary}33`,
+            transition: "all 0.2s ease"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-2px)";
+            e.currentTarget.style.boxShadow = `0 8px 16px ${colors.primary}44`;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = `0 4px 12px ${colors.primary}33`;
           }}
         >
           {showAddUser ? "Add User" : "Update User"}

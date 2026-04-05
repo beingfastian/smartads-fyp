@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { useTheme } from '../../context/ThemeContext.jsx';
 import {
   ArrowLeft, Search, Plus, Trash2, Edit3, X,
-  Filter, Layout, Image as ImageIcon,
+  Filter, Layout, Image as ImageIcon, Video,
   Sparkles, Clock, ExternalLink, Activity,
   AlertCircle, BrainCircuit, Play, Pause,
   ShieldAlert, Loader2, Wand2, RefreshCw, Maximize2
@@ -17,165 +17,49 @@ import {
   validateMarketingPrompt
 } from '../../services/aiService.js';
 import ImageGenerator from './ImageGenerator.jsx';
+import VideoAdModule from '../Dashboard/VideoAdModule.jsx';
 
 /* ─────────────────────────── INITIAL DATA ─────────────────────────── */
 
-const INITIAL_TEMPLATES = [
+const FIXED_IMAGE_TEMPLATES = [
   {
-    id: 't-ramadan-bazaar-1',
-    name: 'Grand Ramzan Bazaar',
-    category: TemplateCategory.CULTURAL,
-    mediaType: MediaType.POSTER,
-    brandTone: BrandTone.DYNAMIC,
-    status: TemplateStatus.APPROVED,
-    lastUpdated: new Date().toLocaleDateString(),
-    description: 'Vibrant outdoor market scene for evening Ramadan shopping festivals.',
-    previewUrl: 'https://images.unsplash.com/photo-1582230209796-033ba1718228?q=80&w=800',
-    prompt: 'Bustling Ramadan night market, colorful stalls with spices and fabrics, warm string lights overhead, silhouette of a grand mosque in the background, cinematic commercial photography, rich warm tones.',
-    objective: 'Direct Response',
-    visualStyle: 'Luxury Organic'
-  },
-  {
-    id: 't-eid-adha-1',
-    name: 'Eid-ul-Adha Sacrifice Sale',
-    category: TemplateCategory.CULTURAL,
-    mediaType: MediaType.POSTER,
-    brandTone: BrandTone.BOLD,
-    status: TemplateStatus.APPROVED,
-    lastUpdated: new Date().toLocaleDateString(),
-    description: 'Minimalist retail poster for livestock and qurbani services.',
-    previewUrl: 'https://images.unsplash.com/photo-1545199611-6623631f4a98?q=80&w=800',
-    prompt: 'Minimalist illustration of a sheep silhouette, geometric sun setting in background, earthy tones (terracotta and cream), clean typography space, professional agricultural branding.',
-    objective: 'Direct Response',
-    visualStyle: 'Modern Minimalism'
-  },
-  {
-    id: 't-holi-run-1',
-    name: 'Holi Color Run Promo',
-    category: TemplateCategory.CULTURAL,
-    mediaType: MediaType.VIDEO,
-    brandTone: BrandTone.DYNAMIC,
-    status: TemplateStatus.APPROVED,
-    lastUpdated: new Date().toLocaleDateString(),
-    description: 'High-energy video for Holi festivals and color runs.',
-    previewUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-    prompt: 'Ultra slow-motion explosion of purple and teal powders, people laughing in white clothes, vibrant color clouds, cinematic high-speed camera, celebratory atmosphere.',
-    duration: 12,
-    audioTracks: ['energetic'],
-    caption: 'FEEL THE COLOR',
-    animationStyle: 'Dynamic Flow',
-    objective: 'Social Engagement',
-    visualStyle: 'Vibrant Retro'
-  },
-  {
-    id: 't-diwali-lights-1',
-    name: 'Diwali Glow Discount',
-    category: TemplateCategory.CULTURAL,
-    mediaType: MediaType.VIDEO,
-    brandTone: BrandTone.ELEGANT,
-    status: TemplateStatus.APPROVED,
-    lastUpdated: new Date().toLocaleDateString(),
-    description: 'Atmospheric video focusing on traditional lighting and warmth.',
-    previewUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-    prompt: 'Dozens of flickering clay diyas (oil lamps) on a dark wooden floor, macro focus on one diya, warm amber glow, soft bokeh of more lights in background, smooth camera pan.',
-    duration: 10,
-    audioTracks: ['nature'],
-    caption: 'LIGHT UP YOUR HOME',
-    animationStyle: 'Cinematic Pan',
-    objective: 'Brand Awareness',
-    visualStyle: 'Luxury Organic'
-  },
-  {
-    id: 't-lunar-new-year-1',
-    name: 'Lunar New Year Feast',
-    category: TemplateCategory.CULTURAL,
-    mediaType: MediaType.VIDEO,
-    brandTone: BrandTone.BOLD,
-    status: TemplateStatus.APPROVED,
-    lastUpdated: new Date().toLocaleDateString(),
-    description: 'Energetic food sequence for Lunar New Year dining promotions.',
-    previewUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-    prompt: 'Red lanterns swaying, slow motion of chopsticks picking up a dumpling, steam rising, traditional red and gold decorations, cinematic lighting.',
-    duration: 15,
-    audioTracks: ['energetic'],
-    caption: 'PROSPERITY FEAST',
-    animationStyle: 'Dynamic Flow',
-    objective: 'Direct Response',
-    visualStyle: 'Luxury Organic'
-  },
-  {
-    id: 't-ramzan-sale-1',
-    name: 'Ramzan Grand Sale 2025',
-    category: TemplateCategory.CULTURAL,
-    mediaType: MediaType.POSTER,
-    brandTone: BrandTone.BOLD,
-    status: TemplateStatus.APPROVED,
-    lastUpdated: new Date().toLocaleDateString(),
-    description: 'High-impact retail poster for Suhoor to Iftar shopping festivals.',
-    previewUrl: 'https://images.unsplash.com/photo-1558223933-960228d447f7?q=80&w=800',
-    prompt: 'Commercial retail poster, "RAMZAN SALE" text with glowing golden neon, dark emerald background, silhouette of a mosque, floating shopping bags with crescent moon icons, ultra-realistic studio lighting, 8k resolution.',
-    objective: 'Direct Response',
-    visualStyle: 'Cyberpunk Tech'
-  },
-  {
-    id: 't-street-food-1',
-    name: 'Street Food Fusion',
-    category: TemplateCategory.PROMOTIONAL,
-    mediaType: MediaType.VIDEO,
-    brandTone: BrandTone.PLAYFUL,
-    status: TemplateStatus.APPROVED,
-    lastUpdated: new Date().toLocaleDateString(),
-    description: 'Energetic montage of sizzling street food and vibrant urban flavors.',
-    previewUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    prompt: 'Close-up slow motion of spices hitting a hot pan, steam rising in a night market, neon signs reflected in puddles, kinetic camera movement, warm and saturated colors.',
-    duration: 15,
-    audioTracks: ['energetic'],
-    caption: 'TASTE THE STREETS',
-    animationStyle: 'Dynamic Flow',
-    objective: 'Direct Response',
-    visualStyle: 'Cyberpunk Tech'
-  },
-  {
-    id: 't-mid-autumn-1',
-    name: 'Mid-Autumn Reunion',
-    category: TemplateCategory.CULTURAL,
-    mediaType: MediaType.POSTER,
-    brandTone: BrandTone.ELEGANT,
-    status: TemplateStatus.APPROVED,
-    lastUpdated: new Date().toLocaleDateString(),
-    description: 'Graceful aesthetic for mooncake and reunion gift sets.',
-    previewUrl: 'https://images.unsplash.com/photo-1506459225024-1428097a7e18?q=80&w=800',
-    prompt: 'A large full moon behind silhouette of cherry blossom branches, elegant mooncakes on a jade plate, soft teal and silver moonlight, minimalist and serene.',
-    objective: 'Brand Awareness',
-    visualStyle: 'Modern Minimalism'
-  },
-  {
-    id: 't-luxury-auto-1',
-    name: 'Elite Automotive Reveal',
+    id: 'ft-tech-logo-1',
+    name: 'Elite Tech AI Branding',
+    mediaType: MediaType.POSTER, // We use poster type to imply Image here
     category: TemplateCategory.BRAND_AWARENESS,
-    mediaType: MediaType.POSTER,
-    brandTone: BrandTone.PROFESSIONAL,
-    status: TemplateStatus.APPROVED,
-    lastUpdated: new Date().toLocaleDateString(),
-    description: 'Sleek, high-end automotive photography for luxury car launches.',
-    previewUrl: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=800',
-    prompt: 'Sleek sports car in a minimalist concrete showroom, dramatic top-down lighting, sharp reflections, monochrome color palette with subtle silver accents, 8k photorealistic.',
-    objective: 'Brand Awareness',
-    visualStyle: 'Modern Minimalism'
+    description: 'Sleek, minimalist branding for artificial intelligence and tech startups.',
+    prompt: 'Professional minimalist logo for an AI startup, sleek futuristic symbol, blue and white neon color palette, 8k resolution, cinematic lighting, ultra-modern tech aesthetic.',
+    previewUrl: 'https://images.unsplash.com/photo-1620712943543-bcc4628c9757?q=80&w=800'
   },
   {
-    id: 't-sakura-season-1',
-    name: 'Sakura Springs Collection',
-    category: TemplateCategory.SEASONAL,
+    id: 'ft-food-poster-1',
+    name: 'Signature Burger Reveal',
     mediaType: MediaType.POSTER,
-    brandTone: BrandTone.ELEGANT,
-    status: TemplateStatus.APPROVED,
-    lastUpdated: new Date().toLocaleDateString(),
-    description: 'Dreamy spring collection launch for fashion and lifestyle.',
-    previewUrl: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?q=80&w=800',
-    prompt: 'Soft pink cherry blossom petals falling against a bright blue sky, macro focus on one petal, ethereal lighting, dreamy bokeh, pastel aesthetic.',
-    objective: 'Brand Awareness',
-    visualStyle: 'Luxury Organic'
+    category: TemplateCategory.PROMOTIONAL,
+    description: 'High-end commercial photography style for premium food branding.',
+    prompt: 'Mouth-watering photography of a triple-decker beef burger, gourmet style, dark textured background, cinematic warm lighting, steam rising, high detail, commercial food photography.',
+    previewUrl: 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?q=80&w=800'
+  }
+];
+
+const FIXED_VIDEO_TEMPLATES = [
+  {
+    id: 'ft-villa-video-1',
+    name: 'Horizon Luxury Villa',
+    mediaType: MediaType.VIDEO,
+    category: TemplateCategory.BRAND_AWARENESS,
+    description: 'Cinematic real estate overview for luxury properties and holiday rentals.',
+    previewUrl: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?q=80&w=800',
+    productData: {
+      productName: "Horizon Villa",
+      productCategory: "Real Estate",
+      productDescription: "Stunning modern villa with panoramic sea views and private infinity pool.",
+      keyFeatures: "5 Bedrooms, Infinity Pool, Smart Home Tech, 24/7 Security",
+      brandName: "Elite Estates",
+      targetAudience: "Luxury buyers & investors",
+      callToAction: "Schedule a Private Tour",
+      productPrice: "$2.5M+"
+    }
   }
 ];
 
@@ -331,44 +215,34 @@ const TemplateManager = ({ onBack }) => {
   const { user, hasFeatureAccess } = useAuth();
   const { colors } = useTheme();
 
-  const [templates, setTemplates] = useState(() => {
-    const saved = localStorage.getItem('smartads_templates');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return parsed.length > 0 ? parsed : INITIAL_TEMPLATES;
-      } catch { return INITIAL_TEMPLATES; }
-    }
-    return INITIAL_TEMPLATES;
-  });
-
+  const [viewingTemplate, setViewingTemplate] = useState(null);
+  const [editingTemplate, setEditingTemplate] = useState(null);
+  const [showEditor, setShowEditor] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
-  const [showEditor, setShowEditor] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState(null);
-  const [viewingTemplate, setViewingTemplate] = useState(null);
+  
+  // States for prefilling generators
   const [showImageGenerator, setShowImageGenerator] = useState(false);
+  const [showVideoGenerator, setShowVideoGenerator] = useState(false);
+  const [prefilledImageData, setPrefilledImageData] = useState(null);
+  const [prefilledVideoData, setPrefilledVideoData] = useState(null);
 
-  useEffect(() => {
-    localStorage.setItem('smartads_templates', JSON.stringify(templates));
-  }, [templates]);
+  const [customTemplates, setCustomTemplates] = useState(() => {
+    const saved = localStorage.getItem('smartads_custom_templates');
+    try {
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
 
+  // Access Control
   const isHeadUser = user?.isHeadUser;
-  const hasAccess = hasFeatureAccess(user?.id, 'templates');
+  const hasAccess = hasFeatureAccess ? hasFeatureAccess(user?.id, 'templates') : true;
   const canAdd = isHeadUser;
   const canDelete = isHeadUser;
   const canEdit = isHeadUser || hasAccess;
 
-  const filteredTemplates = useMemo(() => {
-    return templates.filter(t => {
-      const matchSearch = (t.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (t.description || "").toLowerCase().includes(searchTerm.toLowerCase());
-      const matchType = filterType === 'all' || t.mediaType === filterType;
-      const matchCategory = filterCategory === 'all' || t.category === filterCategory;
-      return matchSearch && matchType && matchCategory;
-    });
-  }, [templates, searchTerm, filterType, filterCategory]);
+  const [templates, setTemplates] = useState([...FIXED_IMAGE_TEMPLATES, ...FIXED_VIDEO_TEMPLATES]);
 
   const handleSaveTemplate = (data) => {
     if (!canEdit) return;
@@ -404,13 +278,14 @@ const TemplateManager = ({ onBack }) => {
     setViewingTemplate(null);
   };
 
-  const handleUseTemplate = (template) => {
-    setEditingTemplate({
-      ...template,
-      id: isHeadUser ? template.id : null,
-      name: isHeadUser ? template.name : `Copy of ${template.name}`
-    });
-    setShowEditor(true);
+  const handleUseFixedTemplate = (template) => {
+    if (template.mediaType === MediaType.VIDEO) {
+      setPrefilledVideoData(template.productData);
+      setShowVideoGenerator(true);
+    } else {
+      setPrefilledImageData(template.prompt);
+      setShowImageGenerator(true);
+    }
     setViewingTemplate(null);
   };
 
@@ -529,98 +404,40 @@ const TemplateManager = ({ onBack }) => {
           </div>
         </div>
       </div>
-
-      {/* ── Template Grid ── */}
-      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 40px' }}>
-        {filteredTemplates.length === 0 ? (
-          <div style={{ ...cardStyle, padding: '80px 40px', textAlign: 'center', animation: 'fadeIn 0.5s ease-out' }}>
-            <ImageIcon size={48} style={{ color: colors.text2, opacity: 0.3, marginBottom: 16 }} />
-            <h3 style={{ color: colors.text1, fontSize: '1.3rem', fontWeight: 700, marginBottom: 8 }}>No Templates Found</h3>
-            <p style={{ color: colors.text2, fontSize: 14, margin: 0 }}>
-              {searchTerm || filterType !== 'all' || filterCategory !== 'all'
-                ? 'Try adjusting your search or filters.'
-                : 'Get started by creating your first template.'}
-            </p>
+      {/* ── Categorized Templates ── */}
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 40px', display: 'flex', flexDirection: 'column', gap: 64, animation: 'fadeIn 0.5s ease-out 0.2s both', paddingBottom: 80 }}>
+        
+        {/* Image Templates Section */}
+        <section>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: `${colors.primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.primary }}>
+              <ImageIcon size={20} />
+            </div>
+            <h3 style={{ color: colors.text1, fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>Image Generation Templates</h3>
           </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 24, animation: 'fadeIn 0.5s ease-out 0.2s both' }}>
-            {filteredTemplates.map((t, i) => (
-              <div
-                key={t.id}
-                onClick={() => setViewingTemplate(t)}
-                style={{ ...cardStyle, overflow: 'hidden', cursor: 'pointer', transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)', animation: `fadeIn 0.5s ease-out ${0.05 * i}s both` }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-8px)'; e.currentTarget.style.boxShadow = `0 20px 50px ${colors.primary}20`; e.currentTarget.style.borderColor = colors.primary; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = colors.border; }}
-              >
-                {/* Image / Video Preview */}
-                <div style={{ height: 220, position: 'relative', overflow: 'hidden', background: '#0f172a', borderBottom: `1px solid ${colors.border}` }}>
-                  {t.mediaType === MediaType.VIDEO ? (
-                    <VideoPlayer url={t.previewUrl} caption={t.caption} duration={t.duration} isAutoPlay={false} isMuted={true} />
-                  ) : (
-                    <img
-                      src={t.previewUrl}
-                      alt={t.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.6s' }}
-                      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
-                      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                    />
-                  )}
-                  {/* Badges */}
-                  <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 40, display: 'flex', gap: 6 }}>
-                    <span style={{ ...pillStyle, background: 'rgba(0,0,0,0.7)', color: '#fff', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                      {t.mediaType}
-                    </span>
-                    {t.category === TemplateCategory.CULTURAL && (
-                      <span style={{ ...pillStyle, background: `${colors.primary}dd`, color: '#fff', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                        Cultural
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Card Content */}
-                <div style={{ padding: '20px 24px 24px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                    <h3 style={{ color: colors.text1, fontSize: '1.1rem', fontWeight: 700, margin: 0, lineHeight: 1.3, flex: 1 }}>{t.name}</h3>
-                    <div style={{ display: 'flex', gap: 4, marginLeft: 8, flexShrink: 0 }}>
-                      {canEdit && (
-                        <button
-                          onClick={e => { e.stopPropagation(); setEditingTemplate(t); setShowEditor(true); }}
-                          style={{ padding: 8, borderRadius: 10, border: 'none', background: 'transparent', color: `${colors.primary}60`, cursor: 'pointer', transition: 'all 0.2s' }}
-                          onMouseEnter={e => { e.currentTarget.style.background = `${colors.primary}15`; e.currentTarget.style.color = colors.primary; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = `${colors.primary}60`; }}
-                        >
-                          <Edit3 size={16} />
-                        </button>
-                      )}
-                      {canDelete && (
-                        <button
-                          onClick={e => handleDelete(e, t.id)}
-                          style={{ padding: 8, borderRadius: 10, border: 'none', background: 'transparent', color: 'rgba(239,68,68,0.4)', cursor: 'pointer', transition: 'all 0.2s' }}
-                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.color = '#ef4444'; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(239,68,68,0.4)'; }}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  <p style={{ color: colors.text2, fontSize: 13, margin: 0, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {t.description}
-                  </p>
-                  <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: colors.primary, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      {t.category?.replace('_', ' ')}
-                    </span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: colors.text2, opacity: 0.5 }}>
-                      {t.lastUpdated}
-                    </span>
-                  </div>
-                </div>
-              </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 32 }}>
+            {FIXED_IMAGE_TEMPLATES.map((t, i) => (
+              <TemplateCard key={t.id} template={t} index={i} colors={colors} onUse={() => handleUseFixedTemplate(t)} />
             ))}
           </div>
-        )}
+        </section>
+
+        {/* Video Templates Section */}
+        <section style={{ borderTop: `1px solid ${colors.border}`, paddingTop: 64 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: `${colors.secondary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.secondary }}>
+              <Video size={20} />
+            </div>
+            <h3 style={{ color: colors.text1, fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>Video Generation Templates</h3>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 32 }}>
+            {FIXED_VIDEO_TEMPLATES.map((t, i) => (
+              <TemplateCard key={t.id} template={t} index={i} colors={colors} onUse={() => handleUseFixedTemplate(t)} />
+            ))}
+          </div>
+        </section>
       </div>
 
       {/* ── View Modal ── */}
@@ -715,8 +532,99 @@ const TemplateManager = ({ onBack }) => {
 
       {/* ── Image Generator Modal ── */}
       {showImageGenerator && (
-        <ImageGenerator onClose={() => setShowImageGenerator(false)} />
+        <ImageGenerator 
+          initialPrompt={prefilledImageData} 
+          onClose={() => { setShowImageGenerator(false); setPrefilledImageData(null); }} 
+        />
       )}
+
+      {/* ── Video Generator Modal ── */}
+      {showVideoGenerator && (
+        <div style={{ 
+          position: 'fixed', inset: 0, zIndex: 2000, 
+          display: 'flex', alignItems: 'center', justifyContent: 'center', 
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(20px)', padding: 24 
+        }}>
+          <div style={{ ...cardStyle, width: '100%', maxWidth: 1200, maxHeight: '90vh', overflowY: 'auto', position: 'relative', padding: 40, borderRadius: 24 }}>
+            <button 
+              onClick={() => { setShowVideoGenerator(false); setPrefilledVideoData(null); }}
+              style={{ position: 'absolute', top: 24, right: 24, width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.05)', color: colors.text2, border: 'none', cursor: 'pointer', zIndex: 10 }}
+            >
+              <X size={20} />
+            </button>
+            <VideoAdModule initialData={prefilledVideoData} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ─────────────────────────── HELPER COMPONENTS ─────────────────────────── */
+
+const TemplateCard = ({ template, index, colors, onUse }) => {
+  const t = template;
+  return (
+    <div
+      onClick={onUse}
+      style={{ 
+        background: colors.cardBg, 
+        border: `1px solid ${colors.border}`, 
+        borderRadius: 20,
+        overflow: 'hidden', 
+        cursor: 'pointer', 
+        transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)', 
+        animation: `fadeIn 0.5s ease-out ${0.05 * index}s both` 
+      }}
+      onMouseEnter={e => { 
+        e.currentTarget.style.transform = 'translateY(-8px)'; 
+        e.currentTarget.style.boxShadow = `0 20px 50px ${colors.primary}20`; 
+        e.currentTarget.style.borderColor = colors.primary; 
+      }}
+      onMouseLeave={e => { 
+        e.currentTarget.style.transform = 'translateY(0)'; 
+        e.currentTarget.style.boxShadow = 'none'; 
+        e.currentTarget.style.borderColor = colors.border; 
+      }}
+    >
+      <div style={{ height: 220, position: 'relative', overflow: 'hidden', background: '#0f172a' }}>
+        <img
+          src={t.previewUrl}
+          alt={t.name}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.6s' }}
+          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
+          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+        />
+        <div style={{ position: 'absolute', top: 12, left: 12 }}>
+          <span style={{ padding: '4px 12px', borderRadius: 8, background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: 11, fontWeight: 700, backdropFilter: 'blur(8px)' }}>
+            {t.mediaType}
+          </span>
+        </div>
+      </div>
+      <div style={{ padding: 24 }}>
+        <h3 style={{ color: colors.text1, fontSize: '1.1rem', fontWeight: 700, margin: '0 0 10px 0' }}>{t.name}</h3>
+        <p style={{ color: colors.text2, fontSize: 13, lineHeight: 1.5, margin: '0 0 20px 0', height: 40, overflow: 'hidden' }}>{t.description}</p>
+        <button
+          onClick={(e) => { e.stopPropagation(); onUse(); }}
+          style={{ 
+            width: '100%', 
+            padding: '12px', 
+            borderRadius: 12, 
+            border: 'none', 
+            background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`, 
+            color: '#fff', 
+            fontWeight: 700, 
+            fontSize: 14, 
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8
+          }}
+        >
+          <Sparkles size={16} /> Use Template
+        </button>
+      </div>
     </div>
   );
 };

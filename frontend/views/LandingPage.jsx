@@ -1,166 +1,195 @@
 import React, { useState } from "react";
-import { Video, Image, MessageSquare, Zap, Calendar, BarChart3, ArrowRight, Rocket, Layers, Users } from "lucide-react";
+import { Video, Image, Zap, Calendar, BarChart3, ArrowRight, Rocket, Layers, Users } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import Navbar from "../components/common/Navbar";
+import Footer from "../components/common/Footer";
 
 const LandingPage = ({ onNavigate }) => {
   const [hovered, setHovered] = useState(null);
   const { colors, mode } = useTheme();
 
   const features = [
-    { icon: Video, title: "AI Video Generator", desc: "Create professional videos automatically", color: colors.primary },
-    { icon: Image, title: "Logo & Poster Design", desc: "Generate stunning designs instantly", color: colors.secondary },
-    { icon: MessageSquare, title: "Caption Generator", desc: "Smart captions in multiple languages", color: colors.primary },
-    { icon: Zap, title: "Voiceover Creator", desc: "Natural voiceovers with accents", color: colors.secondary },
-    { icon: Calendar, title: "Social Scheduler", desc: "Post directly to social media", color: colors.accent },
-    { icon: BarChart3, title: "Analytics Dashboard", desc: "Track performance", color: colors.accent },
-    { icon: Layers, title: "Template Manager", desc: "Organize and manage design templates", color: colors.primary },
-    { icon: Users, title: "User Management", desc: "Invite and manage team members", color: colors.secondary },
+    { icon: Video, title: "AI Video Generator", desc: "Create professional videos automatically from your product descriptions.", color: colors.primary },
+    { icon: Image, title: "Logo & Poster Design", desc: "Generate stunning marketing assets and brand identities instantly.", color: colors.secondary },
+    { icon: Zap, title: "Voiceover Creator", desc: "Natural-sounding voiceovers with various accents and tones.", color: colors.accent },
+    { icon: Calendar, title: "Social Scheduler", desc: "Plan and post your content directly to all social platforms.", color: "#10B981" },
+    { icon: BarChart3, title: "Analytics Dashboard", desc: "Track conversions and performance metrics in real-time.", color: "#F59E0B" },
+    { icon: Users, title: "Team Collaboration", desc: "Invite members and manage permissions across projects.", color: "#3B82F6" },
   ];
 
   return (
-    <div style={{ background: colors.bg1, fontFamily: "Arial", color: colors.text1, transition: "0.3s all" }}>
-      <style>{`
-        @keyframes spin360 {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
-
+    <div style={{ 
+      background: colors.bg1, 
+      color: colors.text1, 
+      minHeight: "100vh",
+      transition: "background 0.3s ease",
+      fontFamily: "'Inter', sans-serif"
+    }}>
       <Navbar onNavigate={onNavigate} />
 
-      {/* HERO */}
-      <section
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
+      {/* HERO SECTION */}
+      <section style={{
+        padding: "200px 20px 140px",
+        textAlign: "center",
+        maxWidth: 1200,
+        margin: "0 auto",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}>
+        {/* Label Badge */}
+        <div className="animate-fadeIn" style={{
+          display: "inline-flex",
           alignItems: "center",
-          paddingTop: 150,
-          paddingBottom: 100,
-
-          // UPDATED GRADIENT FOR DARK MODE
-          background: mode === "dark"
-            ? `linear-gradient(135deg, #000053, #0A0A73)`
-            : `linear-gradient(135deg, ${colors.bg1}, ${colors.bg2})`,
-
-          textAlign: "center",
-          color: colors.text1,
-          transition: "0.3s all",
-        }}
-      >
-        {/* LABEL */}
-        <div
-          style={{
-            padding: "8px 20px",
-            borderRadius: 20,
-            background: `${colors.primary}22`,
-            border: `1px solid ${colors.primary}44`,
-            marginBottom: 30,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <Rocket size={18} color={colors.primary} />
-          <span style={{ color: colors.primary, fontWeight: "bold", fontSize: "0.95rem" }}>
-            AI-Powered Marketing Platform
+          gap: 8,
+          padding: "8px 16px",
+          borderRadius: "100px",
+          background: mode === "dark" ? "rgba(56, 189, 248, 0.1)" : "rgba(2, 132, 199, 0.05)",
+          border: `1px solid ${colors.primary}33`,
+          marginBottom: 32,
+        }}>
+          <Rocket size={14} color={colors.primary} />
+          <span style={{ 
+            color: colors.primary, 
+            fontSize: "0.85rem", 
+            fontWeight: "600", 
+            letterSpacing: "0.05em",
+            textTransform: "uppercase"
+          }}>
+            Next-Gen AI Marketing
           </span>
         </div>
 
-        <h1 style={{ fontSize: "3.5rem", fontWeight: "bold", color: colors.text1, marginBottom: 20, lineHeight: 1.2 }}>
-          Transform Your Marketing <br /> with AI Magic
+        <h1 className="animate-slideUp" style={{
+          fontSize: "clamp(2.5rem, 8vw, 4.5rem)",
+          fontWeight: "800",
+          lineHeight: 1.1,
+          marginBottom: 24,
+          maxWidth: 900,
+          fontFamily: "'Outfit', sans-serif",
+          color: colors.text1
+        }}>
+          Elevate Your Brand <br /> with AI Intelligence
         </h1>
 
-        <p style={{
-          fontSize: "1.2rem",
+        <p className="animate-slideUp" style={{
+          fontSize: "clamp(1.1rem, 2vw, 1.25rem)",
           color: colors.text2,
-          maxWidth: 700,
-          marginBottom: 40,
+          maxWidth: 650,
           lineHeight: 1.6,
+          marginBottom: 48,
         }}>
-          Create professional logos, posters, and video ads in minutes. No design experience required.
+          SmartAds empowers your team to generate high-converting videos, logos, and voiceovers in seconds. Professional design, accessible to everyone.
         </p>
 
-        <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
+        <div className="animate-slideUp" style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
           <button
             onClick={() => onNavigate("signup")}
             style={{
-              padding: "15px 40px",
-              background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
-              color: "white",
+              padding: "16px 40px",
+              background: colors.primary,
+              color: mode === "dark" ? "#0B0E14" : "white",
               borderRadius: 12,
               border: "none",
+              fontSize: "1.1rem",
+              fontWeight: "700",
+              cursor: "pointer",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              boxShadow: `0 8px 30px ${colors.primary}40`,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-4px)";
+              e.currentTarget.style.boxShadow = `0 12px 40px ${colors.primary}60`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = `0 8px 30px ${colors.primary}40`;
+            }}
+          >
+            Get Started Free
+          </button>
+          
+          <button
+            onClick={() => onNavigate("login")}
+            style={{
+              padding: "16px 40px",
+              background: "transparent",
+              color: colors.text1,
+              borderRadius: 12,
+              border: `1px solid ${colors.border}`,
               fontSize: "1.1rem",
               fontWeight: "600",
               cursor: "pointer",
               transition: "all 0.3s ease",
-              boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = mode === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.02)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
             }}
           >
-            Start Free Trial
+            Live Demo
           </button>
         </div>
       </section>
 
-      {/* FEATURES */}
-      <section style={{ padding: "80px 20px", maxWidth: 1300, margin: "0 auto", background: colors.bg1 }}>
-        <h2 style={{ textAlign: "center", fontSize: "2.8rem", color: colors.text1, marginBottom: 10, fontWeight: "bold" }}>
-          Powerful Features
-        </h2>
+      {/* FEATURES SECTION */}
+      <section style={{ 
+        padding: "100px 20px", 
+        maxWidth: 1240, 
+        margin: "0 auto",
+        background: colors.bg1,
+      }}>
+        <div style={{ textAlign: "center", marginBottom: 80 }}>
+          <h2 style={{ fontSize: "2.8rem", fontWeight: "700", marginBottom: 16, fontFamily: "'Outfit', sans-serif" }}>
+            Unified Creative Platform
+          </h2>
+          <p style={{ color: colors.text2, fontSize: "1.1rem", maxWidth: 600, margin: "0 auto" }}>
+            Everything you need to scale your digital presence, powered by world-class AI models.
+          </p>
+        </div>
 
-        <p style={{ textAlign: "center", color: colors.text2, fontSize: "1.1rem", marginBottom: 50 }}>
-          Everything you need to grow your business
-        </p>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-            gap: 35,
-          }}
-        >
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+          gap: 32,
+        }}>
           {features.map((f, i) => (
             <div
               key={i}
               onMouseEnter={() => setHovered(i)}
               onMouseLeave={() => setHovered(null)}
               style={{
-                padding: 30,
-                borderRadius: 15,
-                background: hovered === i ? `${f.color}10` : mode === "dark"
-                  ? "rgba(255,255,255,0.15)"
-                  : "rgba(255,255,255,0.8)",
-                border: hovered === i ? `2px solid ${f.color}` : `2px solid ${colors.border}`,
-                transition: "all 0.3s ease",
+                padding: 40,
+                borderRadius: 24,
+                background: colors.bg2,
+                border: `1px solid ${hovered === i ? colors.primary + "44" : colors.border}`,
+                transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
                 cursor: "pointer",
-                boxShadow: hovered === i ? "0 8px 25px rgba(0,0,0,0.1)" : "0 2px 8px rgba(0,0,0,0.05)",
-                transform: hovered === i ? "translateY(-5px)" : "translateY(0)",
+                transform: hovered === i ? "translateY(-8px)" : "translateY(0)",
+                boxShadow: hovered === i ? `0 20px 40px rgba(0,0,0, ${mode === 'dark' ? '0.4' : '0.05'})` : "none",
               }}
             >
-              <div
-                style={{
-                  width: 60,
-                  height: 60,
-                  borderRadius: 15,
-                  background: f.color,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 20,
-                  animation: hovered === i ? "spin360 0.5s linear 1" : "none",
-                  boxShadow: `0 4px 15px ${f.color}40`,
-                }}
-              >
-                <f.icon size={30} color="white" />
+              <div style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: mode === 'dark' ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 24,
+                border: `1px solid ${colors.border}`,
+              }}>
+                <f.icon size={24} color={f.color} />
               </div>
 
-               <h3 style={{ color: mode === "dark" ? "#F0F4FF" : colors.text1, fontSize: "1.3rem", marginBottom: 10, fontWeight: "bold" }}>
+              <h3 style={{ fontSize: "1.4rem", fontWeight: "700", marginBottom: 12, color: colors.text1, fontFamily: "'Outfit', sans-serif" }}>
                 {f.title}
               </h3>
 
-              <p style={{ color: mode === "dark" ? "#C7D2FE" : colors.text2, lineHeight: 1.6, fontSize: "0.95rem" }}>
+              <p style={{ color: colors.text2, lineHeight: 1.7, fontSize: "1rem" }}>
                 {f.desc}
               </p>
             </div>
@@ -168,220 +197,49 @@ const LandingPage = ({ onNavigate }) => {
         </div>
       </section>
 
-      {/* CTA */}
-      <section
-        style={{
-          padding: "90px 20px",
-          textAlign: "center",
-
-          // UPDATED CTA GRADIENT TOO
-          background: mode === "dark"
-            ? `linear-gradient(135deg, #000053, #2D2DA0, #4C4CF5)`
-            : `linear-gradient(135deg, ${colors.primary}, ${colors.secondary}, ${colors.accent})`,
-
-          color: "white",
-        }}
-      >
-        <h2 style={{ fontSize: "2.8rem", marginBottom: 20, fontWeight: "bold", color: "#F0F4FF" }}>
-          Ready to Grow Your Business?
-        </h2>
-
-        <p
-          style={{
-            fontSize: "1.2rem",
-            opacity: 0.9,
-            marginBottom: 40,
-            maxWidth: 600,
-            margin: "0 auto 40px",
-            color: "#C7D2FE",
-          }}
-        >
-          Join thousands of brands using SmartAds
-        </p>
-
-        <button
-          onClick={() => onNavigate("signup")}
-          style={{
-            padding: "16px 50px",
-            borderRadius: 12,
-            background: "white",
-            color: "#000053",
-            border: "none",
-            fontSize: "1.2rem",
-            fontWeight: "bold",
-            cursor: "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 10,
-            transition: "all 0.3s ease",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
-          }}
-        >
-          Get Started <ArrowRight size={20} />
-        </button>
+      {/* CALL TO ACTION SECTION */}
+      <section style={{
+        padding: "100px 20px",
+        textAlign: "center",
+        background: mode === "dark" ? "#161B22" : "#F1F5F9",
+        margin: "100px 40px",
+        borderRadius: 40,
+        position: "relative",
+        overflow: "hidden",
+      }}>
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <h2 style={{ fontSize: "3rem", fontWeight: "800", marginBottom: 24, fontFamily: "'Outfit', sans-serif" }}>
+            Ready to Automate Your Ad Strategy?
+          </h2>
+          <p style={{ fontSize: "1.2rem", color: colors.text2, marginBottom: 40, maxWidth: 600, margin: "0 auto 40px" }}>
+            Join forward-thinking brands and start creating professional content today.
+          </p>
+          <button
+            onClick={() => onNavigate("signup")}
+            style={{
+              padding: "18px 50px",
+              background: colors.text1,
+              color: colors.bg1,
+              borderRadius: 14,
+              border: "none",
+              fontSize: "1.1rem",
+              fontWeight: "700",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "scale(1.05)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "scale(1)";
+            }}
+          >
+            Start Building Now
+          </button>
+        </div>
       </section>
 
-      {/* FOOTER */}
-      <footer
-        style={{
-          padding: "60px 40px 30px",
-          borderTop: `1px solid ${colors.border}`,
-          background: mode === "dark" ? "rgba(0, 0, 40, 0.95)" : "#F1F5F9",
-          color: colors.text2,
-          transition: "all 0.3s ease",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 1200,
-            margin: "0 auto",
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-            gap: 40,
-            marginBottom: 40,
-          }}
-        >
-          {/* About Section */}
-          <div style={{ textAlign: "left" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 15 }}>
-              <div
-                style={{
-                  width: 35,
-                  height: 35,
-                  borderRadius: 10,
-                  background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: `0 4px 12px ${colors.primary}40`,
-                }}
-              >
-                <Rocket size={18} color="white" />
-              </div>
-              <h3
-                style={{
-                  fontSize: "1.3rem",
-                  fontWeight: "bold",
-                  margin: 0,
-                  background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                SmartAds
-              </h3>
-            </div>
-            <p style={{ fontSize: "0.95rem", lineHeight: 1.6, opacity: 0.8, color: colors.text2 }}>
-              AI-Powered Marketing Platform helping businesses create professional content in minutes.
-            </p>
-          </div>
-
-          
-          {/* Contact Info */}
-          <div style={{ textAlign: "left" }}>
-            <h4 style={{ fontSize: "1.1rem", marginBottom: 15, fontWeight: "bold", color: colors.text1 }}>
-              Contact Us
-            </h4>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {/* Phone */}
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div
-                  style={{
-                    width: 35,
-                    height: 35,
-                    borderRadius: 8,
-                    background: `${colors.primary}20`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke={colors.primary}
-                    strokeWidth="2"
-                  >
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                  </svg>
-                </div>
-                <span style={{ fontSize: "0.95rem", color: colors.text2 }}>03031233445</span>
-              </div>
-
-              {/* Email */}
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div
-                  style={{
-                    width: 35,
-                    height: 35,
-                    borderRadius: 8,
-                    background: `${colors.secondary}20`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke={colors.secondary}
-                    strokeWidth="2"
-                  >
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                    <polyline points="22,6 12,13 2,6" />
-                  </svg>
-                </div>
-                <span style={{ fontSize: "0.95rem", wordBreak: "break-all", color: colors.text2 }}>nakhalsheikh4@gmail.com</span>
-              </div>
-
-              {/* Location */}
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div
-                  style={{
-                    width: 35,
-                    height: 35,
-                    borderRadius: 8,
-                    background: `${colors.accent}20`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke={colors.accent}
-                    strokeWidth="2"
-                  >
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                    <circle cx="12" cy="10" r="3" />
-                  </svg>
-                </div>
-                <span style={{ fontSize: "0.95rem", color: colors.text2 }}>NUCES Chiniot, Pakistan</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Bar */}
-        <div
-          style={{
-            paddingTop: 30,
-            borderTop: `1px solid ${colors.border}`,
-            textAlign: "center",
-          }}
-        >
-          <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.7, color: colors.text2 }}>
-            © 2025 SmartAds. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

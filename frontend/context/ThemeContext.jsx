@@ -14,37 +14,42 @@ export const ThemeProvider = ({ children }) => {
     toggleTheme,
     colors: isDark
       ? {
-          primary: "#00D9FF",
-          secondary: "#7C3AED",
-          accent: "#EC4899",
+          primary: "#38BDF8", // Sky Blue Accent
+          secondary: "#6366F1", // Electric Indigo
+          accent: "#A855F7", // Purple Accent
 
-          // UPDATED BACKGROUNDS (based on #000053)
-          bg1: "#000053",
-          bg2: "#0A0A73", // lighter shade
-          bg3: "#1A1A9A", // soft deep indigo
+          // NOIR SLATE PALETTE (Subtle & Professional)
+          bg1: "#0B0E14", // Deep Charcoal Base
+          bg2: "#161B22", // Slate Surface
+          bg3: "#1C2128", // Lighter Surface
+          bg4: "#21262D", // Contrast Surface
 
-          cardBg: "rgba(0, 0, 83, 0.65)", // matching the new tone
-          text1: "#E0E7FF",
-          text2: "#C7D2FE",
-          border: "rgba(0, 217, 255, 0.35)",
-          // Additional colors for interaction
-          success: "#4ade80",
-          error: "#f87171",
+          cardBg: "rgba(22, 27, 34, 0.8)", // Semi-transparent Slate
+          text1: "#E6EDF3", // Soft White
+          text2: "#9198A1", // Subdued Gray
+          border: "rgba(240, 246, 252, 0.1)", // Thinner, subtle borders
+          
+          success: "#3FB950",
+          error: "#F85149",
         }
       : {
-          primary: "#0088CC",
-          secondary: "#6B21A8",
-          accent: "#DB2777",
-          bg1: "#F8FAFC",
-          bg2: "#E2E8F0",
-          bg3: "#CBD5E1",
+          primary: "#0284C7", // Professional Blue
+          secondary: "#4F46E5", // Deep Indigo
+          accent: "#9333EA", // Purple
+          
+          // SOFT MIST PALETTE
+          bg1: "#F6F8FA", // Mist Base
+          bg2: "#FFFFFF", // Pure White Surface
+          bg3: "#EDF2F7", // Light Gray Surface
+          bg4: "#E2E8F0", // Border shade
+          
           cardBg: "rgba(255, 255, 255, 0.95)",
-          text1: "#1E293B",
-          text2: "#475569",
-          border: "rgba(0, 136, 204, 0.2)",
-          // Additional colors for interaction
-          success: "#10b981",
-          error: "#ef4444",
+          text1: "#1F2328", // Deep Slate
+          text2: "#656D76", // Medium Gray
+          border: "rgba(31, 35, 40, 0.1)",
+          
+          success: "#1A7F37",
+          error: "#D1242F",
         },
   };
 

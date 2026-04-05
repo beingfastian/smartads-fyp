@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { BarChart3, Video, MessageSquare, Zap, Sparkles, Users, Layers, Image, Download, Maximize, X, Rocket } from "lucide-react";
+import { BarChart3, Video, Zap, Sparkles, Users, Layers, Image, Download, Maximize, X, Rocket } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import Navbar from "../components/common/Navbar";
 import { API_BASE_URL } from "../utils/constants";
@@ -12,10 +12,13 @@ import AddEditUserModal from "../components/Dashboard/AddEditUserModal";
 import ManageUsersPage from "../components/ManageUsers/ManageUsersPage";
 import TemplateManager from "../components/TemplateManager/TemplateManager";
 import VideoAdModule from "../components/Dashboard/VideoAdModule";
+import VoiceoverModule from "../components/Dashboard/VoiceoverModule";
+import Footer from "../components/common/Footer";
 
 const Dashboard = ({ onLogout, onNavigate }) => {
     // Video Ad Module state
     const [showVideoAdModule, setShowVideoAdModule] = useState(false);
+    const [showVoiceoverModule, setShowVoiceoverModule] = useState(false);
   const {
     user,
     logout,
@@ -76,8 +79,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
   const allTools = [
     { icon: Sparkles, name: "Logo & Poster Designer", color: "#00D9FF", description: "Create stunning logos and posters", featureId: "logo", action: () => setShowProductForm(true) },
     { icon: Video, name: "AI Video Maker", color: "#7C3AED", description: "Generate professional videos", featureId: "video", action: () => setShowVideoAdModule(true) },
-    { icon: MessageSquare, name: "Caption Writer", color: "#F59E0B", description: "Write engaging captions", featureId: "caption" },
-    { icon: Zap, name: "Voiceover Maker", color: "#10B981", description: "Create voice narrations", featureId: "voiceover" },
+    { icon: Zap, name: "Voiceover Maker", color: "#10B981", description: "Create voice narrations", featureId: "voiceover", action: () => setShowVoiceoverModule(true) },
     { icon: BarChart3, name: "Analytics", color: "#EF4444", description: "Track your performance", featureId: "analytics" },
     { icon: Layers, name: "Template Manager", color: "#F472B6", description: "Organize and manage templates", featureId: "templates", action: () => setCurrentView("templates") },
     { icon: Users, name: "User Management", color: "#60A5FA", description: "Manage your team members", featureId: "users", action: () => setCurrentView("manage-users") },
@@ -310,6 +312,16 @@ const Dashboard = ({ onLogout, onNavigate }) => {
           </div>
         </div>
       )}
+
+      {/* Voiceover Module Modal */}
+      {showVoiceoverModule && (
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(12px)", zIndex: 1000, overflow: "auto", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: "95%", maxWidth: 1000, margin: "auto", background: colors.bg2, borderRadius: 32, boxShadow: "0 24px 60px rgba(0,0,0,0.4)", padding: 48, position: "relative", border: `1px solid ${colors.border}`, animation: 'fadeIn 0.4s ease-out' }}>
+            <button style={{ position: 'absolute', top: 24, right: 24, fontSize: 24, background: mode === 'dark' ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)", border: "none", cursor: "pointer", color: colors.text2, width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onClick={() => setShowVoiceoverModule(false)}>&times;</button>
+            <VoiceoverModule />
+          </div>
+        </div>
+      )}
       <style>{`
         @keyframes spinFast {
           0% { transform: rotate(0deg); }
@@ -346,32 +358,36 @@ const Dashboard = ({ onLogout, onNavigate }) => {
           maxWidth: 1400, 
           margin: "0 auto", 
           padding: "0 40px",
-          marginBottom: 40
+          marginBottom: 60
         }}>
           <div style={{
-            background: colors.cardBg,
-            backdropFilter: "blur(20px)",
+            background: colors.bg2,
             border: `1px solid ${colors.border}`,
-            borderRadius: 20,
-            padding: "40px",
-            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)"
+            borderRadius: 32,
+            padding: "60px",
+            boxShadow: `0 20px 40px -10px rgba(0, 0, 0, ${mode === 'dark' ? '0.4' : '0.05'})`,
+            textAlign: "center"
           }}>
             <h2 style={{ 
               color: colors.text1, 
-              fontSize: "2.5rem", 
-              marginBottom: 12, 
-              fontWeight: "bold"
+              fontSize: "3rem", 
+              marginBottom: 16, 
+              fontWeight: "800",
+              letterSpacing: "-0.02em"
             }}>
               Welcome back, {user?.name}! 👋
             </h2>
             <p style={{ 
               color: colors.text2, 
-              fontSize: "1.1rem",
-              margin: 0
+              fontSize: "1.2rem",
+              margin: 0,
+              maxWidth: 600,
+              margin: "0 auto",
+              lineHeight: 1.6
             }}>
               {user?.isHeadUser 
                 ? `Managing ${user?.organizationName} • ${subUsers.length} team ${subUsers.length === 1 ? 'member' : 'members'}` 
-                : `Access to ${allTools.filter(t => hasFeatureAccess(user?.id, t.featureId)).length} powerful features`
+                : `Access to ${allTools.filter(t => hasFeatureAccess(user?.id, t.featureId)).length} powerful AI marketing tools.`
               }
             </p>
           </div>
@@ -402,33 +418,34 @@ const Dashboard = ({ onLogout, onNavigate }) => {
         {/* Features Section */}
         <div style={{ 
           maxWidth: 1400, 
-          margin: "0 auto 50px",
+          margin: "0 auto 80px",
           padding: "0 40px"
         }}>
           <div style={{
-            marginBottom: 30
+            marginBottom: 40,
+            textAlign: "center"
           }}>
             <h3 style={{
               color: colors.text1,
-              fontSize: "1.8rem",
-              fontWeight: "bold",
-              marginBottom: 8
+              fontSize: "2rem",
+              fontWeight: "700",
+              marginBottom: 12
             }}>
-              Your Tools
+              Your Creative Toolkit
             </h3>
             <p style={{
               color: colors.text2,
-              fontSize: "1rem",
+              fontSize: "1.1rem",
               margin: 0
             }}>
-              Choose a tool to get started with your project
+              Select an AI model to begin your next project.
             </p>
           </div>
 
           <div style={{ 
             display: "grid", 
-            gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", 
-            gap: 25
+            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", 
+            gap: 32
           }}>
             {allTools.map((tool, i) => {
               const allowed = hasFeatureAccess(user?.id, tool.featureId);
@@ -437,95 +454,91 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                   key={i}
                   onClick={allowed && tool.action ? tool.action : null}
                   style={{
-                    padding: "30px 25px",
-                    borderRadius: 18,
-                    background: colors.cardBg,
-                    backdropFilter: "blur(20px)",
-                    border: `2px solid ${allowed ? colors.border : 'rgba(255, 0, 0, 0.2)'}`,
+                    padding: "48px 32px",
+                    borderRadius: 28,
+                    background: colors.bg2,
+                    border: `1px solid ${allowed ? colors.border : colors.error + '33'}`,
                     cursor: allowed && tool.action ? "pointer" : "not-allowed",
-                    opacity: allowed ? 1 : 0.5,
-                    transition: "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                    height: "260px",
+                    opacity: allowed ? 1 : 0.6,
+                    transition: "all 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
                     display: "flex",
                     flexDirection: "column",
-                    justifyContent: "center",
                     alignItems: "center",
                     position: "relative",
                     overflow: "hidden",
-                    animation: `fadeIn 0.6s ease-out ${i * 0.1}s backwards`
+                    animation: `fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${i * 0.1}s backwards`,
+                    boxShadow: mode === 'dark' ? "none" : "0 4px 12px rgba(0,0,0,0.03)"
                   }}
                   onMouseEnter={e => {
                     if (allowed && tool.action) {
-                      e.currentTarget.style.transform = "translateY(-10px) scale(1.03)";
-                      e.currentTarget.style.boxShadow = `0 25px 50px ${tool.color}40`;
-                      e.currentTarget.style.borderColor = tool.color;
+                      e.currentTarget.style.transform = "translateY(-12px)";
+                      e.currentTarget.style.borderColor = colors.primary + "66";
+                      e.currentTarget.style.boxShadow = `0 32px 64px -16px rgba(0,0,0, ${mode === 'dark' ? '0.6' : '0.15'})`;
+                      // Target the icon container
+                      const iconWrap = e.currentTarget.querySelector('.icon-wrap');
+                      if (iconWrap) iconWrap.style.transform = "scale(1.1) rotate(5deg)";
                     }
                   }}
                   onMouseLeave={e => {
                     if (allowed && tool.action) {
-                      e.currentTarget.style.transform = "translateY(0) scale(1)";
-                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.transform = "translateY(0)";
                       e.currentTarget.style.borderColor = colors.border;
+                      e.currentTarget.style.boxShadow = mode === 'dark' ? "none" : "0 4px 12px rgba(0,0,0,0.03)";
+                      const iconWrap = e.currentTarget.querySelector('.icon-wrap');
+                      if (iconWrap) iconWrap.style.transform = "scale(1) rotate(0deg)";
                     }
                   }}
                 >
                   {!allowed && (
                     <div style={{
                       position: "absolute",
-                      top: 12,
-                      right: 12,
-                      background: "rgba(239, 68, 68, 0.9)",
-                      color: "white",
-                      padding: "4px 10px",
-                      borderRadius: 6,
-                      fontSize: "0.75rem",
-                      fontWeight: "600"
+                      top: 20,
+                      right: 20,
+                      background: colors.error + "20",
+                      color: colors.error,
+                      padding: "6px 12px",
+                      borderRadius: 100,
+                      fontSize: "0.8rem",
+                      fontWeight: "700",
+                      border: `1px solid ${colors.error}33`
                     }}>
                       Locked
                     </div>
                   )}
                   <div
+                    className="icon-wrap"
                     style={{
-                      width: 70,
-                      height: 70,
-                      borderRadius: 16,
-                      background: `linear-gradient(135deg, ${tool.color}, ${tool.color}cc)`,
+                      width: 64,
+                      height: 64,
+                      borderRadius: 18,
+                      background: mode === 'dark' ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      marginBottom: 20,
-                      boxShadow: `0 10px 30px ${tool.color}50`,
-                      transition: "all 0.3s ease"
-                    }}
-                    onMouseEnter={e => {
-                      if (allowed) {
-                        e.currentTarget.style.animation = "spinFast 1.2s linear infinite";
-                        e.currentTarget.style.transform = "scale(1.1)";
-                      }
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.animation = "none";
-                      e.currentTarget.style.transform = "scale(1)";
+                      marginBottom: 32,
+                      border: `1px solid ${colors.border}`,
+                      transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)"
                     }}
                   >
-                    <tool.icon size={34} color="white" strokeWidth={2.5} />
+                    <tool.icon size={28} color={allowed ? tool.color : colors.text2} strokeWidth={2} />
                   </div>
                   <h3 style={{ 
                     color: colors.text1, 
-                    fontSize: "1.15rem", 
-                    marginBottom: 10, 
+                    fontSize: "1.4rem", 
+                    marginBottom: 12, 
                     textAlign: "center", 
                     fontWeight: "700",
-                    lineHeight: 1.3
+                    letterSpacing: "-0.01em"
                   }}>
                     {tool.name}
                   </h3>
                   <p style={{ 
                     color: colors.text2, 
-                    fontSize: "0.9rem", 
+                    fontSize: "0.95rem", 
                     textAlign: "center", 
-                    lineHeight: 1.5,
-                    margin: 0
+                    lineHeight: 1.6,
+                    margin: 0,
+                    maxWidth: "240px"
                   }}>
                     {tool.description}
                   </p>
@@ -538,7 +551,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
         {/* Action Buttons */}
         <div style={{ 
           maxWidth: 1400, 
-          margin: "0 auto 60px",
+          margin: "0 auto 120px",
           padding: "0 40px",
           display: "flex", 
           justifyContent: "center", 
@@ -548,218 +561,65 @@ const Dashboard = ({ onLogout, onNavigate }) => {
         }}>
           {user?.isHeadUser && (
             <button 
-              onClick={() => setShowUserManagement(true)} 
+              onClick={() => setCurrentView("manage-users")} 
               style={{ 
-                padding: "14px 30px", 
-                background: `linear-gradient(135deg, ${colors.secondary}, #9333EA)`, 
-                border: "none", 
-                color: "#fff", 
+                padding: "12px 28px", 
+                background: colors.bg3,
+                border: `1px solid ${colors.border}`,
+                color: colors.text1,
                 borderRadius: 12, 
                 cursor: "pointer", 
-                fontWeight: "600", 
-                fontSize: "1.05rem", 
+                fontWeight: "700", 
+                fontSize: "0.95rem", 
                 display: "flex", 
                 alignItems: "center", 
                 gap: 10,
-                boxShadow: `0 8px 20px ${colors.secondary}40`,
-                transition: "all 0.3s ease"
+                transition: "all 0.3s ease",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
               }}
               onMouseEnter={e => {
-                e.currentTarget.style.transform = "translateY(-3px)";
-                e.currentTarget.style.boxShadow = `0 12px 30px ${colors.secondary}60`;
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.background = colors.bg4;
+                e.currentTarget.style.borderColor = colors.primary + "44";
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = `0 8px 20px ${colors.secondary}40`;
+                e.currentTarget.style.background = colors.bg3;
+                e.currentTarget.style.borderColor = colors.border;
               }}
             >
-              <Users size={22} /> Manage Team ({subUsers.length})
+              <Users size={18} color={colors.primary} /> Manage Team ({subUsers.length})
             </button>
           )}
           <button 
             onClick={handleLogout} 
             style={{ 
-              padding: "14px 32px", 
+              padding: "12px 28px", 
               background: "transparent", 
-              border: `2px solid ${colors.primary}`, 
-              color: colors.primary, 
+              border: `1px solid ${colors.error}66`, 
+              color: colors.error, 
               borderRadius: 12, 
               cursor: "pointer", 
-              fontWeight: "600", 
-              fontSize: "1.05rem",
+              fontWeight: "700", 
+              fontSize: "0.95rem",
               transition: "all 0.3s ease"
             }}
             onMouseEnter={e => {
-              e.currentTarget.style.background = colors.primary;
-              e.currentTarget.style.color = mode === "dark" ? "#000" : "#fff";
-              e.currentTarget.style.transform = "translateY(-3px)";
+              e.currentTarget.style.background = colors.error + "11";
+              e.currentTarget.style.transform = "translateY(-2px)";
             }}
             onMouseLeave={e => {
               e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.color = colors.primary;
               e.currentTarget.style.transform = "translateY(0)";
             }}
           >
-            Logout
+            Sign Out
           </button>
         </div>
       </div>
       )}
 
-      {/* Footer */}
-      <footer
-        style={{
-          padding: "60px 40px 30px",
-          borderTop: `1px solid ${colors.border}`,
-          background: mode === "dark" ? "rgba(0, 0, 40, 0.95)" : "#F1F5F9",
-          color: colors.text2,
-          transition: "all 0.3s ease",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 1400,
-            margin: "0 auto",
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-            gap: 40,
-            marginBottom: 40,
-          }}
-        >
-          <div style={{ textAlign: "left" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 15 }}>
-              <div
-                style={{
-                  width: 35,
-                  height: 35,
-                  borderRadius: 10,
-                  background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: `0 4px 12px ${colors.primary}40`,
-                }}
-              >
-                <Rocket size={18} color="white" />
-              </div>
-              <h3
-                style={{
-                  fontSize: "1.3rem",
-                  fontWeight: "bold",
-                  margin: 0,
-                  background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                SmartAds
-              </h3>
-            </div>
-            <p style={{ fontSize: "0.95rem", lineHeight: 1.6, opacity: 0.8, color: colors.text2 }}>
-              AI-Powered Marketing Platform helping businesses create professional content in minutes.
-            </p>
-          </div>
-
-          <div style={{ textAlign: "left" }}>
-            <h4 style={{ fontSize: "1.1rem", marginBottom: 15, fontWeight: "bold", color: colors.text1 }}>
-              Contact Us
-            </h4>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div
-                  style={{
-                    width: 35,
-                    height: 35,
-                    borderRadius: 8,
-                    background: `${colors.primary}20`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke={colors.primary}
-                    strokeWidth="2"
-                  >
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                  </svg>
-                </div>
-                <span style={{ fontSize: "0.95rem", color: colors.text2 }}>03031233445</span>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div
-                  style={{
-                    width: 35,
-                    height: 35,
-                    borderRadius: 8,
-                    background: `${colors.secondary}20`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke={colors.secondary}
-                    strokeWidth="2"
-                  >
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                    <polyline points="22,6 12,13 2,6" />
-                  </svg>
-                </div>
-                <span style={{ fontSize: "0.95rem", wordBreak: "break-all", color: colors.text2 }}>nakhalsheikh4@gmail.com</span>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div
-                  style={{
-                    width: 35,
-                    height: 35,
-                    borderRadius: 8,
-                    background: `${colors.accent}20`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke={colors.accent}
-                    strokeWidth="2"
-                  >
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                    <circle cx="12" cy="10" r="3" />
-                  </svg>
-                </div>  
-                <span style={{ fontSize: "0.95rem", color: colors.text2 }}>NUCES Chiniot, Pakistan</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div
-          style={{
-            paddingTop: 30,
-            borderTop: `1px solid ${colors.border}`,
-            textAlign: "center",
-          }}
-        >
-          <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.7, color: colors.text2 }}>
-            © 2025 SmartAds. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <Footer />
 
       {/* Product Form Modal */}
       {showProductForm && (
@@ -954,6 +814,8 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                   </div>
                 )}
               </div>
+
+
 
               {/* Reference Images */}
               <label style={{ color: colors.text1, display: "block", marginBottom: "6px", fontWeight: "500", fontSize: "15px" }}>

@@ -196,6 +196,18 @@ export const videoAdAPI = {
   },
 };
 
+/**
+ * Voice API endpoints
+ */
+export const voiceAPI = {
+  // Generate voice via Eleven Labs — accepts { text: "...", voice_id: "..." }
+  generateVoice: (data) =>
+    apiRequest('/api/generate-voice', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+};
+
 export default {
   auth: authAPI,
   user: userAPI,
@@ -203,5 +215,6 @@ export default {
   design: designAPI,
   product: productAPI,
   template: templateAPI,
-  videoAd: videoAdAPI, // Export added to default object as well
+  videoAd: videoAdAPI,
+  voice: voiceAPI,
 };

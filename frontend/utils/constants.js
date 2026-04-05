@@ -19,7 +19,6 @@ export const ALL_FEATURES = [
   { id: 'logo', name: 'Logo Design' },
   { id: 'poster', name: 'Poster Creation' },
   { id: 'video', name: 'Video Generation' },
-  { id: 'caption', name: 'Caption Writer' },
   { id: 'voiceover', name: 'Voiceover Synthesis' },
   { id: 'analytics', name: 'Analytics' },
   { id: 'templates', name: 'Template Manager' },

@@ -13,6 +13,7 @@ from controllers.auth_controller import auth_controller
 from controllers.design_controller import design_controller
 from controllers.product_controller import product_controller
 from controllers.template_controller import template_controller
+from controllers.voice_controller import voice_controller
 
 # Import config
 from config.settings import FLASK_HOST, FLASK_PORT, FLASK_DEBUG
@@ -59,6 +60,7 @@ def create_app():
     app.register_blueprint(design_controller, url_prefix="/api")
     app.register_blueprint(product_controller, url_prefix="/api")
     app.register_blueprint(template_controller, url_prefix="/api")
+    app.register_blueprint(voice_controller, url_prefix="/api")
     from video_ad_module import video_ad_module
     app.register_blueprint(video_ad_module, url_prefix="/api")
     

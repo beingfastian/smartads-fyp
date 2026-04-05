@@ -15,9 +15,9 @@ const initialProduct = {
   callToAction: '',
 };
 
-const VideoAdModule = () => {
+const VideoAdModule = ({ initialData = null }) => {
   const { colors, mode } = useTheme();
-  const [product, setProduct] = useState(initialProduct);
+  const [product, setProduct] = useState(initialData || initialProduct);
   const [enhancedPrompt, setEnhancedPrompt] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [loading, setLoading] = useState(false);

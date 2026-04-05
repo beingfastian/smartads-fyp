@@ -34,6 +34,7 @@ build/
 .env.local
 .env.*.local
 backend/.env
+.env.example
 
 # ----- Editor directories and files -----
 .vscode/*

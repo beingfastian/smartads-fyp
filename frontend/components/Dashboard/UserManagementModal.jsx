@@ -21,16 +21,26 @@ const UserManagementModal = ({
         onClick={() => setShowAddUser(true)}
         style={{
           padding: "12px 24px",
-          background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
+          background: colors.primary,
           border: "none",
-          color: "#fff",
+          color: mode === 'dark' ? "#0B0E14" : "white",
           borderRadius: 12,
           cursor: "pointer",
-          fontWeight: "600",
+          fontWeight: "700",
           marginBottom: 25,
           display: "flex",
           alignItems: "center",
           gap: 8,
+          boxShadow: `0 4px 12px ${colors.primary}33`,
+          transition: "all 0.2s ease"
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "translateY(-2px)";
+          e.currentTarget.style.boxShadow = `0 8px 16px ${colors.primary}44`;
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "translateY(0)";
+          e.currentTarget.style.boxShadow = `0 4px 12px ${colors.primary}33`;
         }}
       >
         <Plus size={20} /> Add Member
