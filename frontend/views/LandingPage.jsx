@@ -158,6 +158,11 @@ const LandingPage = ({ onNavigate }) => {
           {features.map((f, i) => (
             <div
               key={i}
+              onClick={() => {
+                // Store the feature being accessed for post-login redirect
+                localStorage.setItem('targetFeature', f.title);
+                onNavigate('login');
+              }}
               onMouseEnter={() => setHovered(i)}
               onMouseLeave={() => setHovered(null)}
               style={{
@@ -189,9 +194,23 @@ const LandingPage = ({ onNavigate }) => {
                 {f.title}
               </h3>
 
-              <p style={{ color: colors.text2, lineHeight: 1.7, fontSize: "1rem" }}>
+              <p style={{ color: colors.text2, lineHeight: 1.7, fontSize: "1rem", marginBottom: 16 }}>
                 {f.desc}
               </p>
+
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                color: colors.primary,
+                fontWeight: 600,
+                fontSize: "0.95rem",
+                marginTop: "auto",
+                opacity: hovered === i ? 1 : 0.7,
+                transition: "opacity 0.3s ease",
+              }}>
+                Explore <ArrowRight size={16} />
+              </div>
             </div>
           ))}
         </div>

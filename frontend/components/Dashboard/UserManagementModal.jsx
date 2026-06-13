@@ -1,6 +1,6 @@
 import React from "react";
 import Modal from "./Modal";
-import { Plus, Edit, Trash2, Users } from "lucide-react";
+import { Plus, Edit, Trash2, Users, ArrowLeft } from "lucide-react";
 
 const UserManagementModal = ({
   show,
@@ -17,34 +17,61 @@ const UserManagementModal = ({
 
   return (
     <Modal title={`Team Management (${subUsers.length})`} onClose={onClose} colors={colors}>
-      <button
-        onClick={() => setShowAddUser(true)}
-        style={{
-          padding: "12px 24px",
-          background: colors.primary,
-          border: "none",
-          color: mode === 'dark' ? "#0B0E14" : "white",
-          borderRadius: 12,
-          cursor: "pointer",
-          fontWeight: "700",
-          marginBottom: 25,
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          boxShadow: `0 4px 12px ${colors.primary}33`,
-          transition: "all 0.2s ease"
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "translateY(-2px)";
-          e.currentTarget.style.boxShadow = `0 8px 16px ${colors.primary}44`;
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "translateY(0)";
-          e.currentTarget.style.boxShadow = `0 4px 12px ${colors.primary}33`;
-        }}
-      >
-        <Plus size={20} /> Add Member
-      </button>
+      <div style={{ display: "flex", gap: "10px", marginBottom: 25 }}>
+        <button
+          onClick={onClose}
+          style={{
+            padding: "12px 24px",
+            background: colors.secondary || "#4B5563",
+            border: "none",
+            color: "white",
+            borderRadius: 12,
+            cursor: "pointer",
+            fontWeight: "700",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            transition: "all 0.2s ease"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-2px)";
+            e.currentTarget.style.boxShadow = `0 8px 16px ${(colors.secondary || "#4B5563")}44`;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = "none";
+          }}
+        >
+          <ArrowLeft size={20} /> Back
+        </button>
+        <button
+          onClick={() => setShowAddUser(true)}
+          style={{
+            padding: "12px 24px",
+            background: colors.primary,
+            border: "none",
+            color: "white",
+            borderRadius: 12,
+            cursor: "pointer",
+            fontWeight: "700",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            boxShadow: `0 4px 12px ${colors.primary}33`,
+            transition: "all 0.2s ease"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-2px)";
+            e.currentTarget.style.boxShadow = `0 8px 16px ${colors.primary}44`;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = `0 4px 12px ${colors.primary}33`;
+          }}
+        >
+          <Plus size={20} /> Add Member
+        </button>
+      </div>
 
       {subUsers.length === 0 ? (
         <div style={{ textAlign: "center", padding: 40, color: colors.text2 }}>

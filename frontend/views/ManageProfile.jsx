@@ -78,16 +78,30 @@ const ManageProfile = ({ onBack, onNavigate }) => {
   const handleFile = (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    // Validate type and size (max 5MB)
-    if (!f.type || !f.type.startsWith('image/')) {
-      setErrors(prev => ({ ...prev, brandLogo: 'Only image files (PNG/JPEG/WebP/SVG) are allowed' }));
+    
+    // Valid image types only (no PDFs)
+    const validImageTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
+    const invalidTypes = ['application/pdf'];
+    
+    // Check if it's a PDF
+    if (invalidTypes.includes(f.type) || f.name?.toLowerCase().endsWith('.pdf')) {
+      setErrors(prev => ({ ...prev, brandLogo: 'PDF files are not allowed. Please use PNG, JPEG, WebP, or SVG images.' }));
       return;
     }
+    
+    // Validate type
+    if (!validImageTypes.includes(f.type)) {
+      setErrors(prev => ({ ...prev, brandLogo: 'Only image files (PNG/JPEG/WebP/SVG) are allowed. PDFs and other file types are not supported.' }));
+      return;
+    }
+    
+    // Validate size (max 5MB)
     const maxSize = 5 * 1024 * 1024;
     if (f.size > maxSize) {
       setErrors(prev => ({ ...prev, brandLogo: 'Image must be smaller than 5MB' }));
       return;
     }
+    
     // Clear previous logo error
     setErrors(prev => ({ ...prev, brandLogo: undefined }));
 

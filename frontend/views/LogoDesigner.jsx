@@ -31,8 +31,22 @@ const LogoDesigner = ({ onNavigate }) => {
   // Handle image upload
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
+    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    const maxFileSize = 10 * 1024 * 1024; // 10MB limit
     
     files.forEach(file => {
+      // Check file type - reject PDFs and non-image files
+      if (!validImageTypes.includes(file.type)) {
+        alert(`Invalid file type: ${file.name}. Only JPEG, PNG, GIF, WebP, and SVG images are allowed. PDFs and other files are not supported.`);
+        return;
+      }
+      
+      // Check file size
+      if (file.size > maxFileSize) {
+        alert(`File too large: ${file.name}. Maximum size is 10MB.`);
+        return;
+      }
+      
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = (event) => {

@@ -8,17 +8,26 @@ import LoginPage from "./views/LoginPage";
 import SignupPage from "./views/SignupPage";
 import Dashboard from "./views/Dashboard";
 import LogoDesigner from "./views/LogoDesigner"; 
+import Analytics from "./views/Analytics";
 
 const AppContent = () => {
   const [page, setPage] = useState("landing");
+  const [pageParams, setPageParams] = useState({}); // Store page parameters like tab
   const { user } = useAuth();
 
+  // Enhanced navigation function that handles both page and parameters
+  const handleNavigate = (newPage, params = {}) => {
+    setPage(newPage);
+    setPageParams(params);
+  };
+
   const screens = {
-    landing: <LandingPage onNavigate={setPage} />,
-    login: <LoginPage onNavigate={setPage} />,
-    signup: <SignupPage onNavigate={setPage} />,
-    dashboard: <Dashboard onNavigate={setPage} />,
-    "logo-designer": <LogoDesigner onNavigate={setPage} />,
+    landing: <LandingPage onNavigate={handleNavigate} />,
+    login: <LoginPage onNavigate={handleNavigate} />,
+    signup: <SignupPage onNavigate={handleNavigate} />,
+    dashboard: <Dashboard onNavigate={handleNavigate} pageParams={pageParams} />,
+    "logo-designer": <LogoDesigner onNavigate={handleNavigate} />,
+    analytics: <Analytics onNavigate={handleNavigate} />,
   };
 
   // 1. If user is NOT logged in

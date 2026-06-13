@@ -9,7 +9,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
  */
 async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   const defaultOptions = {
     headers: {
       'Content-Type': 'application/json',
@@ -28,11 +28,11 @@ async function apiRequest(endpoint, options = {}) {
   try {
     const response = await fetch(url, config);
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.error || 'Request failed');
     }
-    
+
     return data;
   } catch (error) {
     console.error('API Error:', error);
@@ -44,7 +44,7 @@ async function apiRequest(endpoint, options = {}) {
  * Auth API endpoints
  */
 export const authAPI = {
-  login: (email, password) => 
+  login: (email, password) =>
     apiRequest('/api/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
@@ -67,6 +67,15 @@ export const authAPI = {
  */
 export const userAPI = {
   getAllUsers: () => apiRequest('/api/get-all-users'),
+  updateUserStatus: (userId, data) => 
+    apiRequest(`/api/update-user-status/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deleteUser: (userId) => 
+    apiRequest(`/api/delete-user/${userId}`, {
+      method: 'DELETE',
+    }),
 }
 
 
@@ -208,6 +217,32 @@ export const voiceAPI = {
     }),
 };
 
+/**
+ * Social Media API endpoints
+ */
+export const socialMediaAPI = {
+  getAuthUrl: (platform, userId) =>
+    apiRequest('/api/social-media/auth-url', {
+      method: 'POST',
+      body: JSON.stringify({ platform, user_id: userId }),
+    }),
+
+  publish: (platform, userId, contentUrl, contentType, caption) =>
+    apiRequest('/api/social-media/publish', {
+      method: 'POST',
+      body: JSON.stringify({ platform, user_id: userId, content_url: contentUrl, content_type: contentType, caption }),
+    }),
+
+  getStatus: (userId) =>
+    apiRequest(`/api/social-media/status?user_id=${userId}`),
+
+  disconnect: (platform, userId) =>
+    apiRequest('/api/social-media/disconnect', {
+      method: 'POST',
+      body: JSON.stringify({ platform, user_id: userId }),
+    }),
+};
+
 export default {
   auth: authAPI,
   user: userAPI,
@@ -217,4 +252,5 @@ export default {
   template: templateAPI,
   videoAd: videoAdAPI,
   voice: voiceAPI,
+  socialMedia: socialMediaAPI,
 };

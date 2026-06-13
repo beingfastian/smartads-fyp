@@ -232,6 +232,34 @@ def get_all_users():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@auth_controller.route("/update-user-status/<user_id>", methods=["PUT"])
+def update_user_status(user_id):
+    """Update user status (Admin only)"""
+    try:
+        data = request.get_json()
+        is_active = data.get("isActive", True)
+        status = data.get("status", "ACTIVE")
+        
+        success = AuthService.update_user_status(user_id, is_active, status)
+        if not success:
+            return jsonify({"success": False, "error": "User not found or status unaltered"}), 404
+            
+        return jsonify({"success": True, "message": "User status updated successfully!"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@auth_controller.route("/delete-user/<user_id>", methods=["DELETE"])
+def delete_user(user_id):
+    """Delete a user (Admin only)"""
+    try:
+        success = AuthService.delete_user(user_id)
+        if not success:
+            return jsonify({"success": False, "error": "User not found"}), 404
+            
+        return jsonify({"success": True, "message": "User deleted successfully!"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @auth_controller.route("/delete-subuser/<subuser_id>", methods=["DELETE"])
 def delete_subuser(subuser_id):
     """Delete a sub-user"""

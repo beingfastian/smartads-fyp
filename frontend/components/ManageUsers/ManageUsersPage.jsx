@@ -33,13 +33,31 @@ const ManageUsersPage = ({ onBack, onNavigate }) => {
       setLoading(true);
       setError('');
       if (!currentUser) return;
-      const sub = (await getSubUsers(currentUser.id)) || [];
-      const normalizedSub = sub.map(s => ({
-        ...s,
-        role: s.role || 'BUSINESS_USER',
-        status: s.isActive === false ? 'INACTIVE' : (s.status || 'ACTIVE'),
-      }));
-      setUsers(normalizedSub);
+      
+      if (currentUser?.role?.toLowerCase() === 'admin') {
+        // Admin sees all users and sub-users directly in the main table
+        const data = await userAPI.getAllUsers();
+        if (data.success) {
+          const allSystemUsers = [...(data.users || []), ...(data.subUsers || [])].filter(u => u.id !== currentUser.id);
+          const normalized = allSystemUsers.map(s => ({
+            ...s,
+            role: s.role || 'BUSINESS_USER',
+            status: s.isActive === false ? 'INACTIVE' : (s.status || 'ACTIVE'),
+            type: s.type || (s.headUserId ? 'sub_user' : 'user')
+          }));
+          setUsers(normalized);
+        }
+      } else {
+         // Existing Logic for normal head users...
+         const sub = (await getSubUsers(currentUser.id)) || [];
+         const normalizedSub = sub.map(s => ({
+           ...s,
+           role: s.role || 'BUSINESS_USER',
+           status: s.isActive === false ? 'INACTIVE' : (s.status || 'ACTIVE'),
+           type: 'sub_user'
+         }));
+         setUsers(normalizedSub);
+      }
     } catch (err) {
       setError('Failed to load users');
     } finally {
@@ -48,21 +66,16 @@ const ManageUsersPage = ({ onBack, onNavigate }) => {
   };
 
   const loadAllDbUsers = async () => {
-    setDbUsersLoading(true);
-    try {
-      const data = await userAPI.getAllUsers();
-      if (data.success) {
-        setAllDbUsers((data.users || []).filter(u => u.id !== currentUser?.id));
-        setAllDbSubUsers(data.subUsers || []);
-      }
-    } catch (error) {
-      console.error("Failed to load DB users", error);
-    } finally {
-      setDbUsersLoading(false);
-    }
+    // Deprecated for admin since they now load natively into `users` table directly.
+    return;
   };
 
-  useEffect(() => { loadUsers(); loadAllDbUsers(); }, [currentUser]);
+  useEffect(() => {
+     if (currentUser) {
+       loadUsers(); 
+       if (currentUser?.role?.toLowerCase() === 'admin') loadAllDbUsers(); 
+     }
+  }, [currentUser]);
 
   const filteredUsers = useMemo(() => {
     return users.filter(u => {
@@ -76,13 +89,26 @@ const ManageUsersPage = ({ onBack, onNavigate }) => {
   const handleUserAction = async (type, userData) => {
     try {
       setError('');
-      if (type === 'suspend' && userData.role === 'ADMIN') {
+      if (type === 'suspend' && userData.role === 'Admin') {
         setError('Admin users cannot be suspended.');
         return;
       }
-      if (type === 'activate') await updateSubUser?.(userData.id, { status: 'ACTIVE', isActive: true });
-      if (type === 'suspend') await updateSubUser?.(userData.id, { status: 'SUSPENDED', isActive: false });
-      if (type === 'delete') await removeSubUser?.(currentUser.id, userData.id);
+      
+      const isActive = type === 'activate';
+      const status = isActive ? 'ACTIVE' : 'SUSPENDED';
+
+      if (userData.type === 'sub_user') {
+         if (type === 'activate') await updateSubUser?.(userData.id, { status: 'ACTIVE', isActive: true });
+         else if (type === 'suspend') await updateSubUser?.(userData.id, { status: 'SUSPENDED', isActive: false });
+         else if (type === 'delete') await removeSubUser?.(currentUser.id, userData.id);
+      } else {
+         // It's a head user / admin / etc
+         if (type === 'activate' || type === 'suspend') {
+            await userAPI.updateUserStatus(userData.id, { isActive, status });
+         } else if (type === 'delete') {
+            await userAPI.deleteUser(userData.id);
+         }
+      }
       
       setSuccessMessage(`User action successful`);
       await loadUsers();
@@ -123,13 +149,36 @@ const ManageUsersPage = ({ onBack, onNavigate }) => {
         
         {/* Header Section */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 48 }}>
-          <div>
-            <h1 style={{ fontSize: "2.5rem", fontWeight: "800", letterSpacing: "-0.03em", margin: 0, fontFamily: "'Outfit', sans-serif" }}>
-              Team Management
-            </h1>
-            <p style={{ color: colors.text2, marginTop: 8, fontSize: "1.05rem" }}>
-              Manage users, roles and feature permissions
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+             {onBack && (
+               <button 
+                 onClick={onBack}
+                 style={{ 
+                   display: 'flex', 
+                   alignItems: 'center', 
+                   justifyContent: 'center',
+                   padding: '0 16px', height: 48, borderRadius: 24, gap: '8px', 
+                   border: 'none', 
+                   background: mode === 'dark' ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+                   color: colors.text1,
+                   cursor: 'pointer',
+                   transition: 'all 0.2s ease',
+                 }}
+                 title="Go Back"
+                 onMouseEnter={(e) => e.currentTarget.style.background = mode === 'dark' ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}
+                 onMouseLeave={(e) => e.currentTarget.style.background = mode === 'dark' ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}
+               >
+                 <ArrowLeft size={20} /> <span style={{fontWeight: 600}}>Back</span>
+               </button>
+             )}
+            <div>
+              <h1 style={{ fontSize: "2.5rem", fontWeight: "800", letterSpacing: "-0.03em", margin: 0, fontFamily: "'Outfit', sans-serif" }}>
+                Team Management
+              </h1>
+              <p style={{ color: colors.text2, marginTop: 8, fontSize: "1.05rem" }}>
+                Manage users, roles and feature permissions
+              </p>
+            </div>
           </div>
           <button 
             onClick={() => setShowAddModal(true)}
@@ -210,6 +259,20 @@ const ManageUsersPage = ({ onBack, onNavigate }) => {
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                  <button onClick={() => {
+                        setSelectedUser(u);
+                        setNewUserData({
+                           name: u.name,
+                           email: u.email,
+                           password: '',
+                           allowedFeatures: u.allowedFeatures || []
+                        });
+                        setShowAddModal(true);
+                     }} 
+                     style={{ background: colors.primary + "15", border: 'none', color: colors.primary, padding: 8, borderRadius: 8, cursor: "pointer" }}
+                  >
+                    <Edit3 size={16} />
+                  </button>
                   <button onClick={() => handleUserAction(u.status === 'ACTIVE' ? 'suspend' : 'activate', u)} style={{ background: mode === 'dark' ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", border: 'none', color: colors.text1, padding: 8, borderRadius: 8, cursor: "pointer" }}>
                     {u.status === 'ACTIVE' ? <Lock size={16} /> : <Unlock size={16} />}
                   </button>
@@ -222,55 +285,17 @@ const ManageUsersPage = ({ onBack, onNavigate }) => {
           )}
         </div>
 
-        {/* Global DB Users (Reduced width & Modernized) */}
-        <div style={{ marginTop: 60 }}>
-          <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ fontSize: "1.5rem", fontWeight: "800", fontFamily: "'Outfit', sans-serif" }}>Registered Users & Sub-Users</h2>
-            <button onClick={loadAllDbUsers} style={{ background: 'none', border: 'none', color: colors.primary, cursor: "pointer", fontWeight: "600", display: 'flex', alignItems: 'center', gap: 6 }}>
-              <RefreshCw size={16} /> Refresh Data
-            </button>
-          </div>
-          
-          <div style={{ ...commonCardStyle, padding: 0 }}>
-             <div style={{ padding: 24, borderBottom: `1px solid ${colors.border}` }}>
-                <p style={{ color: colors.text2, fontSize: 13, margin: 0 }}>Review all system accounts across the platform database.</p>
-             </div>
-             
-             {dbUsersLoading ? (
-               <div style={{ padding: 40, textAlign: 'center' }}>Loading database records...</div>
-             ) : (
-                <div style={{ padding: '0 24px 24px' }}>
-                  {allDbUsers.concat(allDbSubUsers).slice(0, 5).map((u, i) => (
-                    <div key={i} style={{ padding: '16px 0', borderBottom: `1px solid ${colors.border}44`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 8, background: colors.bg3, color: colors.text2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>
-                           <Users size={14} />
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: "600", fontSize: 14 }}>{u.name}</div>
-                          <div style={{ fontSize: 12, color: colors.text2 }}>{u.email}</div>
-                        </div>
-                      </div>
-                      <span style={{ fontSize: 11, fontWeight: "700", color: colors.text2, textTransform: "uppercase", opacity: 0.5 }}>{u.role || 'Sub User'}</span>
-                    </div>
-                  ))}
-                  <div style={{ padding: '16px 0 0', textAlign: 'center' }}>
-                    <p style={{ fontSize: 12, color: colors.text2 }}>Showing latest 5 records &bull; {allDbUsers.length + allDbSubUsers.length} total across DB</p>
-                  </div>
-                </div>
-             )}
-          </div>
-        </div>
+        {/* Global DB Users (Admin Only) - Deprecated as table covers it natively now */}
       </div>
 
-      <Footer />
+      {/* Footer has been removed here because it's rendered by Dashboard or App level, preventing duplicate footers */}
 
       {/* Add User Modal */}
       {showAddModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', padding: 24 }}>
-          <div style={{ ...commonCardStyle, width: '100%', maxWidth: 440, padding: 48 }}>
-            <h3 style={{ fontSize: "1.8rem", fontWeight: "800", marginBottom: 8, fontFamily: "'Outfit', sans-serif" }}>Invite Member</h3>
-            <p style={{ color: colors.text2, marginBottom: 32 }}>Add a new team member to your workspace.</p>
+          <div style={{ ...commonCardStyle, width: '100%', maxWidth: 440, padding: 48, maxHeight: "90vh", overflowY: "auto" }}>
+            <h3 style={{ fontSize: "1.8rem", fontWeight: "800", marginBottom: 8, fontFamily: "'Outfit', sans-serif" }}>{selectedUser ? "Edit Member" : "Invite Member"}</h3>
+            <p style={{ color: colors.text2, marginBottom: 32 }}>{selectedUser ? "Update this member's details and permissions." : "Add a new team member to your workspace."}</p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <input 
@@ -282,17 +307,19 @@ const ManageUsersPage = ({ onBack, onNavigate }) => {
               <input 
                 placeholder="Email" 
                 value={newUserData.email} 
+                disabled={!!selectedUser} // Cannot change email once set to prevent conflicts
                 onChange={e => setNewUserData({...newUserData, email: e.target.value})}
-                style={{ width: '100%', padding: 14, borderRadius: 12, border: `1px solid ${colors.border}`, background: colors.bg1, color: colors.text1, outline: 'none' }}
+                style={{ width: '100%', padding: 14, borderRadius: 12, border: `1px solid ${colors.border}`, background: colors.bg1, color: selectedUser ? colors.text2 : colors.text1, outline: 'none', opacity: selectedUser ? 0.7 : 1 }}
               />
               <input 
                 type="password"
-                placeholder="Initial Password" 
+                placeholder={selectedUser ? "New Password (Optional)" : "Initial Password"} 
                 value={newUserData.password} 
                 onChange={e => setNewUserData({...newUserData, password: e.target.value})}
                 style={{ width: '100%', padding: 14, borderRadius: 12, border: `1px solid ${colors.border}`, background: colors.bg1, color: colors.text1, outline: 'none' }}
               />
 
+              {(!selectedUser || selectedUser.type === 'sub_user') && (
               <div style={{ marginTop: 12 }}>
                 <label style={{ fontSize: 12, fontWeight: "700", marginBottom: 12, display: 'block', color: colors.text2 }}>Tools Permission</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -309,18 +336,32 @@ const ManageUsersPage = ({ onBack, onNavigate }) => {
                    })}
                 </div>
               </div>
+              )}
 
               <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-                <button onClick={() => setShowAddModal(false)} style={{ flex: 1, padding: 14, borderRadius: 12, border: `1px solid ${colors.border}`, background: 'transparent', color: colors.text1, fontWeight: "600", cursor: "pointer" }}>
+                <button onClick={() => {
+                   setShowAddModal(false);
+                   setSelectedUser(null);
+                   setNewUserData({ name: '', email: '', password: '', allowedFeatures: [] });
+                }} style={{ flex: 1, padding: 14, borderRadius: 12, border: `1px solid ${colors.border}`, background: 'transparent', color: colors.text1, fontWeight: "600", cursor: "pointer" }}>
                   Cancel
                 </button>
                 <button onClick={async () => {
                   if (!newUserData.name || !newUserData.email) return;
-                  await addSubUser(currentUser.id, newUserData);
+                  if (selectedUser) {
+                     // Hit Update API
+                     if (selectedUser.type === 'sub_user') {
+                        await updateSubUser(selectedUser.id, newUserData);
+                     }
+                  } else {
+                     await addSubUser(currentUser.id, newUserData);
+                  }
+                  
                   setShowAddModal(false);
+                  setSelectedUser(null);
                   loadUsers();
                 }} style={{ flex: 1, padding: 14, borderRadius: 12, border: 'none', background: colors.primary, color: mode==='dark'?'#0B0E14':'#fff', fontWeight: "700", cursor: "pointer" }}>
-                  Send Invite
+                  {selectedUser ? "Update Member" : "Send Invite"}
                 </button>
               </div>
             </div>

@@ -7,3 +7,4 @@ google-genai
 cloudinary
 bcrypt
 requests
+requests-oauthlib

@@ -37,6 +37,18 @@ const ImageGenerator = ({ onClose, initialPrompt = '' }) => {
       setError('Please enter a description for your ' + type);
       return;
     }
+    
+    // Validate prompt - must contain meaningful text, not just numbers
+    if (/^\d+$/.test(prompt.trim())) {
+      setError('Please provide a meaningful description, not just numbers. Example: "Modern minimalist blue logo for a tech startup"');
+      return;
+    }
+    
+    // Validate minimum length
+    if (prompt.trim().length < 10) {
+      setError('Description too short. Please provide at least 10 characters with descriptive details.');
+      return;
+    }
 
     setIsGenerating(true);
     setGeneratingType(type);

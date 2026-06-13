@@ -120,6 +120,27 @@ class AuthService:
             for u in all_users
         ]
 
+    @staticmethod
+    def update_user_status(user_id: str, is_active: bool, status: str) -> bool:
+        """Update user active status"""
+        try:
+            result = db.users.update_one(
+                {"_id": ObjectId(user_id)},
+                {"$set": {"isActive": is_active, "status": status, "updatedAt": datetime.utcnow()}}
+            )
+            return result.modified_count > 0
+        except:
+            return False
+
+    @staticmethod
+    def delete_user(user_id: str) -> bool:
+        """Delete a user"""
+        try:
+            result = db.users.delete_one({"_id": ObjectId(user_id)})
+            return result.deleted_count > 0
+        except:
+            return False
+
 
 class SubUserService:
     """Service class for sub-user operations"""

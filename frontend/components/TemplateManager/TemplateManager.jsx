@@ -3,8 +3,8 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { useTheme } from '../../context/ThemeContext.jsx';
 import {
   ArrowLeft, Search, Plus, Trash2, Edit3, X,
-  Filter, Layout, Image as ImageIcon, Video,
-  Sparkles, Clock, ExternalLink, Activity,
+  Filter, Layout, Video, Film, Sparkles, Image as ImageIcon,
+  Clock, ExternalLink, Activity,
   AlertCircle, BrainCircuit, Play, Pause,
   ShieldAlert, Loader2, Wand2, RefreshCw, Maximize2
 } from 'lucide-react';
@@ -16,8 +16,8 @@ import {
   editVisualAsset,
   validateMarketingPrompt
 } from '../../services/aiService.js';
-import ImageGenerator from './ImageGenerator.jsx';
 import VideoAdModule from '../Dashboard/VideoAdModule.jsx';
+import ImageGenerator from './ImageGenerator.jsx';
 
 /* ─────────────────────────── INITIAL DATA ─────────────────────────── */
 
@@ -25,7 +25,7 @@ const FIXED_IMAGE_TEMPLATES = [
   {
     id: 'ft-tech-logo-1',
     name: 'Elite Tech AI Branding',
-    mediaType: MediaType.POSTER, // We use poster type to imply Image here
+    mediaType: MediaType.POSTER,
     category: TemplateCategory.BRAND_AWARENESS,
     description: 'Sleek, minimalist branding for artificial intelligence and tech startups.',
     prompt: 'Professional minimalist logo for an AI startup, sleek futuristic symbol, blue and white neon color palette, 8k resolution, cinematic lighting, ultra-modern tech aesthetic.',
@@ -223,10 +223,10 @@ const TemplateManager = ({ onBack }) => {
   const [filterCategory, setFilterCategory] = useState('all');
   
   // States for prefilling generators
-  const [showImageGenerator, setShowImageGenerator] = useState(false);
   const [showVideoGenerator, setShowVideoGenerator] = useState(false);
-  const [prefilledImageData, setPrefilledImageData] = useState(null);
   const [prefilledVideoData, setPrefilledVideoData] = useState(null);
+  const [showImageGenerator, setShowImageGenerator] = useState(false);
+  const [prefilledImageData, setPrefilledImageData] = useState(null);
 
   const [customTemplates, setCustomTemplates] = useState(() => {
     const saved = localStorage.getItem('smartads_custom_templates');
@@ -351,24 +351,14 @@ const TemplateManager = ({ onBack }) => {
             </div>
           </div>
           {canAdd && (
-            <div style={{ display: 'flex', gap: 12 }}>
-              <button
-                onClick={() => setShowImageGenerator(true)}
-                style={{ padding: '14px 28px', background: `rgba(${parseInt(colors.primary.slice(1,3), 16)},${parseInt(colors.primary.slice(3,5), 16)},${parseInt(colors.primary.slice(5,7), 16)},0.15)`, color: colors.primary, border: `1px solid ${colors.primary}40`, borderRadius: 14, fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'all 0.3s' }}
-                onMouseEnter={e => { e.currentTarget.style.background = `${colors.primary}25`; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = `rgba(${parseInt(colors.primary.slice(1,3), 16)},${parseInt(colors.primary.slice(3,5), 16)},${parseInt(colors.primary.slice(5,7), 16)},0.15)`; e.currentTarget.style.transform = 'translateY(0)'; }}
-              >
-                <Sparkles size={18} /> Generate Image
-              </button>
-              <button
-                onClick={() => { setEditingTemplate(null); setShowEditor(true); }}
-                style={{ padding: '14px 28px', background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`, color: '#fff', border: 'none', borderRadius: 14, fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, boxShadow: `0 8px 25px ${colors.primary}40`, transition: 'all 0.3s' }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 12px 35px ${colors.primary}60`; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 8px 25px ${colors.primary}40`; }}
-              >
-                <Plus size={18} /> New Template
-              </button>
-            </div>
+            <button
+              onClick={() => { setEditingTemplate(null); setShowEditor(true); }}
+              style={{ padding: '14px 28px', background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`, color: '#fff', border: 'none', borderRadius: 14, fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, boxShadow: `0 8px 25px ${colors.primary}40`, transition: 'all 0.3s' }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 12px 35px ${colors.primary}60`; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 8px 25px ${colors.primary}40`; }}
+            >
+              <Plus size={18} /> New Template
+            </button>
           )}
         </div>
       </div>
@@ -413,12 +403,12 @@ const TemplateManager = ({ onBack }) => {
             <div style={{ width: 40, height: 40, borderRadius: 12, background: `${colors.primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.primary }}>
               <ImageIcon size={20} />
             </div>
-            <h3 style={{ color: colors.text1, fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>Image Generation Templates</h3>
+            <h3 style={{ color: colors.text1, fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>Logo & Poster Templates</h3>
           </div>
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 32 }}>
             {FIXED_IMAGE_TEMPLATES.map((t, i) => (
-              <TemplateCard key={t.id} template={t} index={i} colors={colors} onUse={() => handleUseFixedTemplate(t)} />
+              <TemplateCard key={t.id} template={t} index={i} colors={colors} onView={() => setViewingTemplate(t)} />
             ))}
           </div>
         </section>
@@ -434,7 +424,7 @@ const TemplateManager = ({ onBack }) => {
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 32 }}>
             {FIXED_VIDEO_TEMPLATES.map((t, i) => (
-              <TemplateCard key={t.id} template={t} index={i} colors={colors} onUse={() => handleUseFixedTemplate(t)} />
+              <TemplateCard key={t.id} template={t} index={i} colors={colors} onView={() => setViewingTemplate(t)} />
             ))}
           </div>
         </section>
@@ -473,7 +463,7 @@ const TemplateManager = ({ onBack }) => {
               {/* Meta Tags */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
                 <span style={{ ...pillStyle, background: 'rgba(255,255,255,0.05)', color: colors.text2, border: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <ImageIcon size={14} /> {viewingTemplate.mediaType}
+                  <Film size={14} /> {viewingTemplate.mediaType}
                 </span>
                 {viewingTemplate.mediaType === MediaType.VIDEO && (
                   <span style={{ ...pillStyle, background: 'rgba(255,255,255,0.05)', color: colors.text2, border: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -491,10 +481,12 @@ const TemplateManager = ({ onBack }) => {
                   <h4 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: colors.text2, opacity: 0.5, margin: 0, marginBottom: 10 }}>Description</h4>
                   <p style={{ color: colors.text2, fontSize: 14, lineHeight: 1.6, fontWeight: 500, margin: 0 }}>{viewingTemplate.description}</p>
                 </div>
-                <div style={{ padding: 20, borderRadius: 16, background: `${colors.primary}08`, border: `1px solid ${colors.primary}15` }}>
-                  <h4 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: colors.primary, margin: 0, marginBottom: 10 }}>AI Prompt</h4>
-                  <p style={{ color: `${colors.primary}cc`, fontSize: 13, lineHeight: 1.6, fontWeight: 500, fontStyle: 'italic', margin: 0 }}>"{viewingTemplate.prompt}"</p>
-                </div>
+                {viewingTemplate.prompt && (
+                  <div style={{ padding: 20, borderRadius: 16, background: `${colors.primary}08`, border: `1px solid ${colors.primary}15` }}>
+                    <h4 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: colors.primary, margin: 0, marginBottom: 10 }}>AI Prompt</h4>
+                    <p style={{ color: `${colors.primary}cc`, fontSize: 13, lineHeight: 1.6, fontWeight: 500, fontStyle: 'italic', margin: 0 }}>"{viewingTemplate.prompt}"</p>
+                  </div>
+                )}
               </div>
 
               {/* Actions */}
@@ -508,7 +500,7 @@ const TemplateManager = ({ onBack }) => {
                   <Edit3 size={16} /> Edit
                 </button>
                 <button
-                  onClick={() => handleUseTemplate(viewingTemplate)}
+                  onClick={() => handleUseFixedTemplate(viewingTemplate)}
                   style={{ padding: '16px 20px', borderRadius: 14, border: 'none', background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: `0 6px 20px ${colors.primary}40`, transition: 'all 0.2s' }}
                   onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 10px 30px ${colors.primary}60`; }}
                   onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 6px 20px ${colors.primary}40`; }}
@@ -530,14 +522,6 @@ const TemplateManager = ({ onBack }) => {
         />
       )}
 
-      {/* ── Image Generator Modal ── */}
-      {showImageGenerator && (
-        <ImageGenerator 
-          initialPrompt={prefilledImageData} 
-          onClose={() => { setShowImageGenerator(false); setPrefilledImageData(null); }} 
-        />
-      )}
-
       {/* ── Video Generator Modal ── */}
       {showVideoGenerator && (
         <div style={{ 
@@ -556,17 +540,25 @@ const TemplateManager = ({ onBack }) => {
           </div>
         </div>
       )}
+
+      {/* ── Image Generator Modal ── */}
+      {showImageGenerator && (
+        <ImageGenerator 
+          initialPrompt={prefilledImageData} 
+          onClose={() => { setShowImageGenerator(false); setPrefilledImageData(null); }} 
+        />
+      )}
     </div>
   );
 };
 
 /* ─────────────────────────── HELPER COMPONENTS ─────────────────────────── */
 
-const TemplateCard = ({ template, index, colors, onUse }) => {
+const TemplateCard = ({ template, index, colors, onView }) => {
   const t = template;
   return (
     <div
-      onClick={onUse}
+      onClick={onView}
       style={{ 
         background: colors.cardBg, 
         border: `1px solid ${colors.border}`, 
@@ -605,7 +597,7 @@ const TemplateCard = ({ template, index, colors, onUse }) => {
         <h3 style={{ color: colors.text1, fontSize: '1.1rem', fontWeight: 700, margin: '0 0 10px 0' }}>{t.name}</h3>
         <p style={{ color: colors.text2, fontSize: 13, lineHeight: 1.5, margin: '0 0 20px 0', height: 40, overflow: 'hidden' }}>{t.description}</p>
         <button
-          onClick={(e) => { e.stopPropagation(); onUse(); }}
+          onClick={(e) => { e.stopPropagation(); onView(); }}
           style={{ 
             width: '100%', 
             padding: '12px', 
@@ -622,7 +614,7 @@ const TemplateCard = ({ template, index, colors, onUse }) => {
             gap: 8
           }}
         >
-          <Sparkles size={16} /> Use Template
+          <Sparkles size={16} /> View Template
         </button>
       </div>
     </div>

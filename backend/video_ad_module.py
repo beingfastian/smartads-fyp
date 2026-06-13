@@ -26,10 +26,14 @@ CLOUDINARY_API_SECRET = os.getenv("CLOUD_API_SECRET")
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
 
 if not GEMINI_API_KEY:
-    print("[ERROR] GEMINI_API_KEY is missing from environment. Video generation will fail.")
-
-# Initialize GenAI client
-genai_client = genai.Client(api_key=GEMINI_API_KEY)
+    print("[WARNING] GEMINI_API_KEY is missing from environment. Video generation will fail until API key is provided.")
+    genai_client = None
+else:
+    try:
+        genai_client = genai.Client(api_key=GEMINI_API_KEY)
+    except ValueError as e:
+        print(f"[ERROR] Failed to initialize Gemini client: {e}")
+        genai_client = None
 
 cloudinary.config(
     cloud_name=CLOUDINARY_CLOUD_NAME,
@@ -47,6 +51,9 @@ videos_collection = db.get_collection("videos")
 # ==========================================================
 @video_ad_module.route("/enhance-prompt", methods=["POST"])
 def enhance_prompt():
+    if not genai_client:
+        return jsonify({"error": "GEMINI_API_KEY is not configured. Please add your API key to .env file."}), 503
+    
     data = request.get_json() or {}
 
     system_instruction = (
@@ -92,14 +99,14 @@ def enhance_prompt():
 # ==========================================================
 @video_ad_module.route("/generate-video", methods=["POST"])
 def generate_video():
+    if not genai_client:
+        return jsonify({"error": "GEMINI_API_KEY is not configured. Please add your API key to .env file."}), 503
+    
     data = request.get_json() or {}
     prompt = data.get("prompt", "")
 
     if not prompt:
         return jsonify({"error": "No prompt provided for video generation."}), 400
-
-    if not GEMINI_API_KEY:
-        return jsonify({"error": "GEMINI_API_KEY is missing."}), 500
 
     print(f"[VEO 3.1] Starting video generation with prompt: {prompt[:100]}...")
 
